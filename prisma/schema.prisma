@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  // FORCE_VERCEL_REBUILD_CACHE_1
 }
 
 datasource db {
