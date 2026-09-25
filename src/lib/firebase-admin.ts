@@ -5,13 +5,20 @@ function initDb() {
   if (!getApps().length) {
     const serviceAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT;
     let credentialConfig;
-    if (serviceAccountStr) {
-      credentialConfig = cert(JSON.parse(serviceAccountStr));
-    } else {
+    try {
+      // Try normal JSON parse first
+      credentialConfig = cert(JSON.parse(serviceAccountStr || '{}'));
+    } catch (e) {
+      // Fallback: extract manually if Vercel mangled the JSON
+      const str = serviceAccountStr || '';
+      const projectId = (str.match(/"project_id"\s*:\s*"([^"]+)"/) || [])[1];
+      const clientEmail = (str.match(/"client_email"\s*:\s*"([^"]+)"/) || [])[1];
+      const privateKey = (str.match(/"private_key"\s*:\s*"([^"]+)"/) || [])[1];
+      
       credentialConfig = cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        projectId: projectId || process.env.FIREBASE_PROJECT_ID,
+        clientEmail: clientEmail || process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: (privateKey || process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
       });
     }
     initializeApp({ credential: credentialConfig });
