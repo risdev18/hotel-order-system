@@ -54,12 +54,18 @@ export default function Home() {
           The complete digital ecosystem for your restaurant. Just scan the QR code on your table to view the beautiful interactive menu and place orders instantly.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 flex-wrap">
           <Link 
             href="/admin"
             className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-orange-500 to-red-600 font-bold text-lg flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-[0_0_40px_rgba(249,115,22,0.3)]"
           >
             Access Admin Dashboard <ArrowRight size={20} />
+          </Link>
+          <Link 
+            href="/superadmin"
+            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 font-bold text-lg flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-[0_0_40px_rgba(147,51,234,0.3)]"
+          >
+            Master Control (Super Admin) <ArrowRight size={20} />
           </Link>
           <Link 
             href="/order/T01"
