@@ -16,9 +16,11 @@ export async function POST(req: NextRequest) {
   try {
     const { name, tableCount, password } = await req.json();
 
-    if (!name || !tableCount || !password) {
+    if (!name || !password) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
+
+    const finalTableCount = tableCount ? parseInt(tableCount) : 10;
 
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     
@@ -31,7 +33,7 @@ export async function POST(req: NextRequest) {
     const docRef = await db.collection("restaurants").add({
       name,
       slug,
-      tableCount: parseInt(tableCount),
+      tableCount: finalTableCount,
       password,
       createdAt: new Date().toISOString()
     });
