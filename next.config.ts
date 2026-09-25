@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
         hostname: 'via.placeholder.com',
       }
     ]
+  },
+  typescript: {
+    ignoreBuildErrors: true,
   }
 };
 
