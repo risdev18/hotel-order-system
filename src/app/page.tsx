@@ -19,13 +19,21 @@ export default function Home() {
             </div>
             <span className="text-xl font-black tracking-wide">The Royal Dhaba</span>
           </div>
-          <Link 
-            href="/admin" 
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all text-sm font-semibold"
-          >
-            <ChefHat size={16} />
-            Staff & Admin
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link 
+              href="/superadmin" 
+              className="text-sm font-semibold text-neutral-400 hover:text-white transition-colors"
+            >
+              App Owner Login
+            </Link>
+            <Link 
+              href="/admin" 
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all text-sm font-semibold"
+            >
+              <ChefHat size={16} />
+              Restaurant Admin
+            </Link>
+          </div>
         </div>
       </nav>
 
