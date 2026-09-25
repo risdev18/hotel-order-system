@@ -27,6 +27,13 @@ export async function POST(req: NextRequest) {
           status: "placed"
         }
       });
+    } else {
+      // If the order was already preparing or served, we need to push it back to the kitchen!
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { status: "placed" }
+      });
+      order.status = "placed";
     }
 
     // Create Order Items
