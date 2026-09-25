@@ -4,8 +4,12 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function GET(req: NextRequest) {
+  const restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl.searchParams.get("restaurantId");
+  if (!restaurantId) return NextResponse.json({error: "Missing restaurantId"}, {status:400});
+
   try {
     const tables = await prisma.table.findMany({
+      where: { restaurantId },
       orderBy: { tableNumber: "asc" },
     });
     return NextResponse.json({ tables });
@@ -15,6 +19,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  let restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl?.searchParams?.get("restaurantId");
+  // Also allow body to have restaurantId
+
   try {
     const { tableNumber } = await req.json();
 

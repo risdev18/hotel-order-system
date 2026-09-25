@@ -3,9 +3,12 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl.searchParams.get("restaurantId");
+  if (!restaurantId) return NextResponse.json({error: "Missing restaurantId"}, {status:400});
+
   try {
-    let settings = await prisma.storeSettings.findFirst();
+    let settings = await prisma.restaurant.findUnique({ where: { id: restaurantId } });
     if (!settings) {
       settings = await prisma.storeSettings.create({
         data: { name: "The Royal Dhaba", tableCount: 30 }
@@ -19,13 +22,15 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
+  let restaurantId = req.headers.get("x-restaurant-id");
+
   try {
     const { name, logoUrl, tableCount } = await req.json();
-    let settings = await prisma.storeSettings.findFirst();
+    let settings = await prisma.restaurant.findUnique();
     
     if (settings) {
-      settings = await prisma.storeSettings.update({
-        where: { id: settings.id },
+      settings = await prisma.restaurant.update({
+        where: { id: restaurantId },
         data: { name, logoUrl, tableCount: Number(tableCount) }
       });
     } else {

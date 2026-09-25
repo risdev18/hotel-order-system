@@ -4,6 +4,9 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
+  let restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl?.searchParams?.get("restaurantId");
+  // Also allow body to have restaurantId
+
   try {
     const { tableId, items } = await req.json();
 

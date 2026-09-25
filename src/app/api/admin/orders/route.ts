@@ -4,9 +4,13 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function GET(req: NextRequest) {
+  const restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl.searchParams.get("restaurantId");
+  if (!restaurantId) return NextResponse.json({error: "Missing restaurantId"}, {status:400});
+
   try {
     const orders = await prisma.order.findMany({
       where: {
+        restaurantId,
         // Fetch active orders (not fully paid/closed, or closed today if we wanted history, but for live dashboard just active ones)
         status: { notIn: ["paid"] }
       },
@@ -30,6 +34,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  let restaurantId = req.headers.get("x-restaurant-id");
+
   try {
     const { orderId, status } = await req.json();
 

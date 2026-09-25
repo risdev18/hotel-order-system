@@ -5,6 +5,9 @@ import QRCode from "qrcode";
 const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
+  let restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl?.searchParams?.get("restaurantId");
+  // Also allow body to have restaurantId
+
   try {
     const { tableId, hostUrl } = await req.json();
 
@@ -17,7 +20,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Table not found" }, { status: 404 });
     }
 
-    const orderUrl = `${hostUrl}/order/${table.tableNumber}`;
+    const restaurant = await prisma.restaurant.findUnique({ where: { id: restaurantId! } });
+    const orderUrl = `${hostUrl}/order/${restaurant!.slug}/${table.tableNumber}`;
     const qrDataUrl = await QRCode.toDataURL(orderUrl, {
       width: 400,
       margin: 2,

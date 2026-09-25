@@ -12,16 +12,30 @@ const ADMIN_PASSWORD = "admin"; // Simple password as requested
 
 export default function UnifiedAdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [slugInput, setSlugInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
+  const [restaurantId, setRestaurantId] = useState("");
   const [activeTab, setActiveTab] = useState<"orders" | "menu" | "tables" | "billing" | "settings">("orders");
 
   // Auth Submit
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordInput === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-    } else {
-      alert("Incorrect password!");
+    try {
+      const res = await fetch("/api/admin/login", {
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: slugInput, password: passwordInput })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setRestaurantId(data.restaurantId);
+        setIsAuthenticated(true);
+      } else {
+        alert(data.error);
+      }
+    } catch (e) {
+      alert("Login failed");
     }
   };
 
@@ -38,12 +52,19 @@ export default function UnifiedAdminDashboard() {
           <p className="text-neutral-500 text-center text-sm mb-6">Enter password to manage restaurant</p>
           
           <input 
+            type="text" 
+            value={slugInput}
+            onChange={(e) => setSlugInput(e.target.value)}
+            placeholder="Restaurant URL (e.g. sagar-ratna)"
+            className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-colors mb-4"
+            autoFocus
+          />
+          <input 
             type="password" 
             value={passwordInput}
             onChange={(e) => setPasswordInput(e.target.value)}
-            placeholder="Enter Password..."
+            placeholder="Admin Password..."
             className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-colors mb-4"
-            autoFocus
           />
           <button 
             type="submit"
@@ -101,11 +122,11 @@ export default function UnifiedAdminDashboard() {
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto print:overflow-visible">
-        {activeTab === "orders" && <LiveOrdersTab />}
-        {activeTab === "menu" && <MenuManagementTab />}
-        {activeTab === "tables" && <TablesManagementTab />}
-        {activeTab === "billing" && <BillingTab />}
-        {activeTab === "settings" && <SettingsTab />}
+        {activeTab === "orders" && <LiveOrdersTab restaurantId={restaurantId} />}
+        {activeTab === "menu" && <MenuManagementTab restaurantId={restaurantId} />}
+        {activeTab === "tables" && <TablesManagementTab restaurantId={restaurantId} />}
+        {activeTab === "billing" && <BillingTab restaurantId={restaurantId} />}
+        {activeTab === "settings" && <SettingsTab restaurantId={restaurantId} />}
       </main>
     </div>
   );
@@ -114,13 +135,14 @@ export default function UnifiedAdminDashboard() {
 // ==========================================
 // TAB 1: LIVE ORDERS
 // ==========================================
-function LiveOrdersTab() {
+function LiveOrdersTab({ restaurantId }: { restaurantId: string }) {
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch("/api/admin/orders");
+      const res = await fetch("/api/admin/orders", {
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId }, headers: { "x-restaurant-id": restaurantId } });
       const data = await res.json();
       setOrders(data.orders || []);
     } catch (error) {
@@ -139,6 +161,7 @@ function LiveOrdersTab() {
   const updateOrderStatus = async (orderId: string, status: string) => {
     try {
       await fetch("/api/admin/orders", {
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId, status }),
@@ -233,14 +256,15 @@ function LiveOrdersTab() {
 // ==========================================
 // TAB 2: MENU UPLOAD & MANAGEMENT
 // ==========================================
-function MenuManagementTab() {
+function MenuManagementTab({ restaurantId }: { restaurantId: string }) {
   const [categories, setCategories] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState("");
 
   const fetchMenu = async () => {
     try {
-      const res = await fetch("/api/menu");
+      const res = await fetch("/api/menu", {
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId }, headers: { "x-restaurant-id": restaurantId } });
       const data = await res.json();
       setCategories(data.categories || []);
     } catch (error) {
@@ -264,6 +288,7 @@ function MenuManagementTab() {
 
     try {
       const res = await fetch("/api/admin/menu/upload", {
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
         method: "POST",
         body: formData,
       });
@@ -350,14 +375,15 @@ function MenuManagementTab() {
 // ==========================================
 // TAB 3: TABLES & QR
 // ==========================================
-function TablesManagementTab() {
+function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
   const [tables, setTables] = useState<any[]>([]);
   const [settings, setSettings] = useState({ name: "The Royal Dhaba", logoUrl: "" });
   const [isGenerating, setIsGenerating] = useState(false);
 
   const fetchTables = async () => {
     try {
-      const res = await fetch("/api/tables");
+      const res = await fetch("/api/tables", {
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId }, headers: { "x-restaurant-id": restaurantId } });
       const data = await res.json();
       setTables(data.tables || []);
     } catch (error) {
@@ -367,7 +393,8 @@ function TablesManagementTab() {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch("/api/admin/settings");
+      const res = await fetch("/api/admin/settings", {
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId }, headers: { "x-restaurant-id": restaurantId } });
       const data = await res.json();
       if (data.settings) setSettings(data.settings);
     } catch (e) {}
@@ -384,6 +411,7 @@ function TablesManagementTab() {
       for (const table of tables) {
         if (!table.qrCodeUrl) {
           await fetch("/api/tables/qr", {
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ tableId: table.id, hostUrl: window.location.origin })
@@ -457,14 +485,15 @@ function TablesManagementTab() {
 // ==========================================
 // TAB 4: BILLING & CHECKOUT
 // ==========================================
-function BillingTab() {
+function BillingTab({ restaurantId }: { restaurantId: string }) {
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [settings, setSettings] = useState({ name: "The Royal Dhaba", logoUrl: "" });
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch("/api/admin/orders");
+      const res = await fetch("/api/admin/orders", {
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId }, headers: { "x-restaurant-id": restaurantId } });
       const data = await res.json();
       // Only show orders that are ready for billing (e.g. not paid yet)
       setOrders(data.orders?.filter((o: any) => o.paymentStatus === 'unpaid') || []);
@@ -475,7 +504,8 @@ function BillingTab() {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch("/api/admin/settings");
+      const res = await fetch("/api/admin/settings", {
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId }, headers: { "x-restaurant-id": restaurantId } });
       const data = await res.json();
       if (data.settings) setSettings(data.settings);
     } catch (e) {}
@@ -490,6 +520,7 @@ function BillingTab() {
     if (!selectedOrder) return;
     try {
       await fetch("/api/admin/orders/pay", {
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId: selectedOrder.id, method })
@@ -604,7 +635,7 @@ function BillingTab() {
 // ==========================================
 // TAB 5: STORE SETTINGS
 // ==========================================
-function SettingsTab() {
+function SettingsTab({ restaurantId }: { restaurantId: string }) {
   const [settings, setSettings] = useState({ name: "The Royal Dhaba", logoUrl: "", tableCount: 30 });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -612,7 +643,8 @@ function SettingsTab() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await fetch("/api/admin/settings");
+        const res = await fetch("/api/admin/settings", {
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId }, headers: { "x-restaurant-id": restaurantId } });
         const data = await res.json();
         if (data.settings) setSettings(data.settings);
       } catch (err) {
@@ -629,6 +661,7 @@ function SettingsTab() {
     setIsSaving(true);
     try {
       const res = await fetch("/api/admin/settings", {
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings)

@@ -7,23 +7,45 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Table {
+model Restaurant {
   id          String   @id @default(cuid())
-  tableNumber String   @unique // e.g. T01, T02
-  qrCodeUrl   String?
-  status      String   @default("free") // "free", "occupied"
+  slug        String   @unique // e.g. "spice-grill"
+  name        String
+  logoUrl     String?
+  tableCount  Int      @default(30)
+  password    String   // Admin login password for this specific restaurant
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
+  tables      Table[]
+  categories  MenuCategory[]
   orders      Order[]
-  calls       WaiterCall[]
+}
+
+model Table {
+  id           String   @id @default(cuid())
+  restaurantId String
+  tableNumber  String
+  qrCodeUrl    String?
+  status       String   @default("free") // "free", "occupied"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orders       Order[]
+  calls        WaiterCall[]
+
+  @@unique([restaurantId, tableNumber])
 }
 
 model MenuCategory {
-  id        String   @id @default(cuid())
-  name      String
-  sortOrder Int      @default(0)
-  items     MenuItem[]
+  id           String   @id @default(cuid())
+  restaurantId String
+  name         String
+  sortOrder    Int      @default(0)
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items        MenuItem[]
 }
 
 model MenuItem {
@@ -31,24 +53,26 @@ model MenuItem {
   categoryId  String
   name        String
   price       Float
-  vegFlag     Boolean  @default(true) // true = veg, false = non-veg
+  vegFlag     Boolean  @default(true)
   imageUrl    String?
   isAvailable Boolean  @default(true)
   description String?
   
-  category    MenuCategory @relation(fields: [categoryId], references: [id])
+  category    MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   orderItems  OrderItem[]
 }
 
 model Order {
   id            String   @id @default(cuid())
+  restaurantId  String
   tableId       String
-  status        String   @default("placed") // "placed", "accepted", "preparing", "served", "paid"
-  paymentStatus String   @default("unpaid") // "unpaid", "paid_online", "paid_counter"
+  status        String   @default("placed") // "placed", "preparing", "served", "paid"
+  paymentStatus String   @default("unpaid") // "unpaid", "paid"
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   
-  table         Table    @relation(fields: [tableId], references: [id])
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  table         Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
   items         OrderItem[]
   bill          Bill?
 }
@@ -60,10 +84,10 @@ model OrderItem {
   quantity         Int      @default(1)
   notes            String?
   priceAtOrderTime Float
-  status           String   @default("pending") // "pending", "preparing", "served"
+  status           String   @default("pending")
 
-  order            Order    @relation(fields: [orderId], references: [id])
-  menuItem         MenuItem @relation(fields: [menuItemId], references: [id])
+  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem         MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
 }
 
 model Bill {
@@ -76,15 +100,7 @@ model Bill {
   paymentMethod String?
   paidAt        DateTime?
   
-  order         Order    @relation(fields: [orderId], references: [id])
-}
-
-model Staff {
-  id           String   @id @default(cuid())
-  name         String
-  role         String   @default("waiter") // "admin", "waiter"
-  phone        String   @unique
-  passwordHash String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 model WaiterCall {
@@ -93,14 +109,5 @@ model WaiterCall {
   resolved  Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  table     Table    @relation(fields: [tableId], references: [id])
-}
-
-model StoreSettings {
-  id            String   @id @default(cuid())
-  name          String   @default("The Royal Dhaba")
-  logoUrl       String?
-  tableCount    Int      @default(30)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
 }

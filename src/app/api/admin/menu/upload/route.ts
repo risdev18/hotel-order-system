@@ -8,6 +8,9 @@ const prisma = new PrismaClient();
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "dummy" });
 
 export async function POST(req: NextRequest) {
+  let restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl?.searchParams?.get("restaurantId");
+  // Also allow body to have restaurantId
+
   try {
     const formData = await req.formData();
     const file = formData.get("menuImage") as File;
