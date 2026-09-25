@@ -265,6 +265,11 @@ function MenuManagementTab({ restaurantId }: { restaurantId: string }) {
   const [newItem, setNewItem] = useState({ name: "", price: "", categoryName: "", vegFlag: true });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Bulk form state
+  const [showBulkForm, setShowBulkForm] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
+
   const fetchMenu = async () => {
     try {
       const res = await fetch("/api/menu", {
@@ -340,6 +345,111 @@ function MenuManagementTab({ restaurantId }: { restaurantId: string }) {
     }
   };
 
+  const handleBulkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bulkText.trim()) return;
+    
+    setIsBulkSubmitting(true);
+    setUploadResult("");
+
+    try {
+      // Parse the text
+      const lines = bulkText.split('\n');
+      const items: any[] = [];
+      let currentCategory = "General";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+
+        // If line doesn't have numbers, assume it's a category header
+        if (!/\d/.test(trimmed)) {
+          currentCategory = trimmed;
+          continue;
+        }
+
+        // Try to match "Name - Price" or "Name Price"
+        const match = trimmed.match(/^(.*?)[-:]?\s*(\d+(?:\.\d+)?)\s*$/);
+        if (match) {
+          items.push({
+            name: match[1].trim(),
+            price: parseFloat(match[2]),
+            categoryName: currentCategory,
+            vegFlag: true
+          });
+        }
+      }
+
+      const res = await fetch("/api/admin/menu/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
+        body: JSON.stringify({ items })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        setUploadResult(`Successfully added ${data.itemsInserted} items!`);
+        setBulkText("");
+        setShowBulkForm(false);
+        fetchMenu();
+      } else {
+        setUploadResult(`Error: ${data.error}`);
+      }
+    } catch (error: any) {
+      setUploadResult(`Failed to parse/add items: ${error.message}`);
+    } finally {
+      setIsBulkSubmitting(false);
+    }
+  };
+
+  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadResult("Parsing CSV...");
+
+    try {
+      const text = await file.text();
+      const lines = text.split('\n');
+      const items: any[] = [];
+
+      // Assume CSV format: Category, Name, Price, IsVeg(true/false)
+      for (let i = 1; i < lines.length; i++) { // Skip header
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        const cols = line.split(',');
+        if (cols.length >= 3) {
+          items.push({
+            categoryName: cols[0].trim(),
+            name: cols[1].trim(),
+            price: parseFloat(cols[2].trim()),
+            vegFlag: cols[3] ? cols[3].trim().toLowerCase() === 'true' : true
+          });
+        }
+      }
+
+      const res = await fetch("/api/admin/menu/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
+        body: JSON.stringify({ items })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        setUploadResult(`Successfully imported ${data.itemsInserted} items from CSV!`);
+        fetchMenu();
+      } else {
+        setUploadResult(`Error: ${data.error}`);
+      }
+    } catch (error: any) {
+      setUploadResult(`CSV Upload failed: ${error.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
@@ -350,29 +460,28 @@ function MenuManagementTab({ restaurantId }: { restaurantId: string }) {
         
         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
           <button 
-            onClick={() => setShowManualForm(!showManualForm)}
+            onClick={() => { setShowBulkForm(!showBulkForm); setShowManualForm(false); }}
             className="bg-white border border-neutral-200 text-neutral-700 px-6 py-3 rounded-xl font-medium hover:bg-neutral-50 transition-colors shadow-sm whitespace-nowrap h-full"
           >
-            {showManualForm ? "Cancel Manual Add" : "+ Add Manually"}
+            {showBulkForm ? "Cancel Bulk Add" : "+ Smart Paste"}
+          </button>
+          <button 
+            onClick={() => { setShowManualForm(!showManualForm); setShowBulkForm(false); }}
+            className="bg-white border border-neutral-200 text-neutral-700 px-6 py-3 rounded-xl font-medium hover:bg-neutral-50 transition-colors shadow-sm whitespace-nowrap h-full"
+          >
+            {showManualForm ? "Cancel Manual Add" : "+ Add 1 by 1"}
           </button>
 
-          <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl flex items-center gap-4">
-            <div>
-              <h3 className="font-bold text-orange-900 flex items-center gap-2">
-                <Sparkles size={18} className="text-orange-500" />
-                AI Photo Upload
-              </h3>
-            </div>
-            <label className="relative cursor-pointer bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
-              {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-              <span>{isUploading ? "Scanning..." : "Upload"}</span>
-              <input 
-                type="file" 
-                accept="image/*" 
-                className="hidden" 
-                onChange={handleFileUpload}
-                disabled={isUploading}
-              />
+          <div className="bg-orange-50 border border-orange-200 p-2 rounded-xl flex items-center gap-2">
+            <label className="relative cursor-pointer bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
+              {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+              <span>{isUploading ? "Uploading..." : "AI Photo"}</span>
+              <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
+            </label>
+            <label className="relative cursor-pointer bg-neutral-900 hover:bg-neutral-800 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
+              {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+              <span>CSV File</span>
+              <input type="file" accept=".csv" className="hidden" onChange={handleCsvUpload} disabled={isUploading} />
             </label>
           </div>
         </div>
@@ -412,8 +521,34 @@ function MenuManagementTab({ restaurantId }: { restaurantId: string }) {
         </form>
       )}
 
+      {showBulkForm && (
+        <form onSubmit={handleBulkSubmit} className="bg-white rounded-2xl p-6 border border-neutral-200 shadow-sm mb-8">
+          <div className="mb-4">
+            <label className="block text-sm font-bold text-neutral-700 mb-2">Smart Paste Area</label>
+            <p className="text-sm text-neutral-500 mb-4">
+              Paste your menu here. Write the category name on its own line, then list items with prices below it. <br/>
+              <span className="font-mono bg-neutral-100 px-2 py-1 rounded text-xs">Example:<br/>Starters<br/>Paneer Tikka - 250<br/>Samosa 50<br/><br/>Mains<br/>Dal Makhani 180</span>
+            </p>
+            <textarea 
+              rows={8}
+              required 
+              placeholder="Paste menu text here..." 
+              value={bulkText} 
+              onChange={e => setBulkText(e.target.value)} 
+              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 font-mono text-sm focus:outline-none focus:border-orange-500"
+            />
+          </div>
+          <div className="flex justify-end">
+            <button type="submit" disabled={isBulkSubmitting} className="bg-neutral-900 text-white font-bold px-8 py-3 rounded-xl hover:bg-neutral-800 flex items-center gap-2">
+              {isBulkSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+              Process & Add Items
+            </button>
+          </div>
+        </form>
+      )}
+
       <div className="space-y-8">
-        {categories.length === 0 && !showManualForm && (
+        {categories.length === 0 && !showManualForm && !showBulkForm && (
            <div className="py-12 text-center text-neutral-400 font-medium border-2 border-dashed rounded-2xl">
               No items on the menu yet. Upload a photo or add manually!
            </div>
