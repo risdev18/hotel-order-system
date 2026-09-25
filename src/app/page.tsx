@@ -3,32 +3,34 @@ import { UtensilsCrossed, ArrowRight, ChefHat, QrCode } from "lucide-react";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-neutral-950 text-white selection:bg-orange-500/30 font-sans relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-full pointer-events-none opacity-20">
-        <div className="absolute top-[20%] left-[10%] w-64 h-64 bg-orange-600 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[20%] right-[10%] w-80 h-80 bg-red-600 rounded-full blur-[150px]" />
-      </div>
+    <main className="min-h-screen bg-[#0a0a0a] text-white selection:bg-[#cda661]/30 font-sans relative overflow-hidden">
+      {/* Background Image from first photo */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40"
+        style={{ backgroundImage: "url('/hero-bg.jpg')" }}
+      />
+      {/* Gradient overlay to make text readable and blend into dark background */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-black/40 via-[#0a0a0a]/80 to-[#0a0a0a] pointer-events-none" />
 
       {/* Navbar */}
-      <nav className="relative z-10 border-b border-white/10 bg-black/20 backdrop-blur-md">
+      <nav className="relative z-10 border-b border-white/5 bg-black/20 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20">
-              <UtensilsCrossed size={20} className="text-white" />
+            <div className="w-10 h-10 bg-[#cda661] rounded-xl flex items-center justify-center shadow-lg shadow-[#cda661]/20">
+              <UtensilsCrossed size={20} className="text-black" />
             </div>
-            <span className="text-xl font-black tracking-wide">The Royal Dhaba</span>
+            <span className="text-xl font-serif tracking-wide text-[#f5f5f5]">The Royal Dhaba</span>
           </div>
           <div className="flex items-center gap-4">
             <Link 
               href="/superadmin" 
-              className="text-sm font-semibold text-neutral-400 hover:text-white transition-colors"
+              className="text-sm font-semibold text-[#a8a8a8] hover:text-[#cda661] transition-colors"
             >
               App Owner Login
             </Link>
             <Link 
               href="/admin" 
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all text-sm font-semibold"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#cda661]/10 border border-[#cda661]/20 hover:bg-[#cda661]/20 hover:border-[#cda661]/40 transition-all text-sm font-semibold text-[#cda661]"
             >
               <ChefHat size={16} />
               Restaurant Admin
@@ -39,37 +41,37 @@ export default function Home() {
 
       {/* Hero Section */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pt-32 pb-24 text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 font-medium text-sm mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#cda661]/10 border border-[#cda661]/20 text-[#cda661] font-medium text-sm mb-8">
           <SparklesIcon className="w-4 h-4" /> Smart Restaurant System
         </div>
         
-        <h1 className="text-5xl md:text-7xl font-black mb-8 leading-tight tracking-tight">
-          Next-Gen Dining <br/>
-          <span className="bg-gradient-to-r from-orange-400 via-red-500 to-orange-500 bg-clip-text text-transparent">
-            Experience.
+        <h1 className="text-5xl md:text-7xl font-serif mb-8 leading-tight tracking-tight text-white">
+          Your next great <br/>
+          <span className="text-[#cda661]">
+            meal starts here.
           </span>
         </h1>
         
-        <p className="text-neutral-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed">
+        <p className="text-[#a8a8a8] text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed">
           The complete digital ecosystem for your restaurant. Just scan the QR code on your table to view the beautiful interactive menu and place orders instantly.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 flex-wrap">
           <Link 
             href="/admin"
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-orange-500 to-red-600 font-bold text-lg flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-[0_0_40px_rgba(249,115,22,0.3)]"
+            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#cda661] text-black font-bold text-lg flex items-center justify-center gap-2 hover:bg-[#ebd59b] active:scale-95 transition-all shadow-[0_0_30px_rgba(205,166,97,0.3)]"
           >
             Access Admin Dashboard <ArrowRight size={20} />
           </Link>
           <Link 
             href="/superadmin"
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 font-bold text-lg flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-[0_0_40px_rgba(147,51,234,0.3)]"
+            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold text-lg flex items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition-all"
           >
-            Master Control (Super Admin) <ArrowRight size={20} />
+            Master Control
           </Link>
           <Link 
             href="/order/T01"
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/5 border border-white/10 font-bold text-lg flex items-center justify-center gap-2 hover:bg-white/10 transition-all"
+            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-[#cda661] font-bold text-lg flex items-center justify-center gap-2 hover:bg-white/10 transition-all"
           >
             <QrCode size={20} /> Preview Customer UI
           </Link>
@@ -99,9 +101,9 @@ export default function Home() {
 
 function FeatureCard({ title, description }: { title: string, description: string }) {
   return (
-    <div className="bg-white/5 border border-white/10 p-8 rounded-3xl hover:bg-white/[0.07] transition-colors">
-      <h3 className="text-xl font-bold mb-3 text-orange-400">{title}</h3>
-      <p className="text-neutral-400 leading-relaxed">{description}</p>
+    <div className="bg-[#121212] border border-[#2a2a2a] p-8 rounded-3xl hover:border-[#cda661]/50 transition-colors group">
+      <h3 className="text-xl font-serif mb-3 text-[#cda661]">{title}</h3>
+      <p className="text-[#888888] leading-relaxed group-hover:text-[#a8a8a8] transition-colors">{description}</p>
     </div>
   );
 }
