@@ -92,16 +92,16 @@ export default function SuperAdminDashboard() {
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
                 <label className="block text-sm font-bold text-neutral-700 mb-1">Restaurant Name</label>
-                <input type="text" required value={newRestaurant.name} onChange={e => setNewRestaurant({...newRestaurant, name: e.target.value})} className="w-full bg-neutral-50 border rounded-xl px-4 py-3" placeholder="e.g. Sagar Ratna" />
+                <input type="text" required value={newRestaurant.name} onChange={e => setNewRestaurant({...newRestaurant, name: e.target.value})} className="w-full bg-neutral-50 border rounded-xl px-4 py-3 text-neutral-900 focus:outline-none focus:border-purple-500" placeholder="e.g. Sagar Ratna" />
               </div>
               <div>
                 <label className="block text-sm font-bold text-neutral-700 mb-1">URL Slug</label>
-                <input type="text" required value={newRestaurant.slug} onChange={e => setNewRestaurant({...newRestaurant, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-')})} className="w-full bg-neutral-50 border rounded-xl px-4 py-3" placeholder="e.g. sagar-ratna" />
+                <input type="text" required value={newRestaurant.slug} onChange={e => setNewRestaurant({...newRestaurant, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-')})} className="w-full bg-neutral-50 border rounded-xl px-4 py-3 text-neutral-900 focus:outline-none focus:border-purple-500" placeholder="e.g. sagar-ratna" />
                 <p className="text-xs text-neutral-400 mt-1">Customers will visit smarthotel.com/order/<b>{newRestaurant.slug || "slug"}</b></p>
               </div>
               <div>
                 <label className="block text-sm font-bold text-neutral-700 mb-1">Admin Password</label>
-                <input type="text" required value={newRestaurant.password} onChange={e => setNewRestaurant({...newRestaurant, password: e.target.value})} className="w-full bg-neutral-50 border rounded-xl px-4 py-3" placeholder="Give this to the owner" />
+                <input type="text" required value={newRestaurant.password} onChange={e => setNewRestaurant({...newRestaurant, password: e.target.value})} className="w-full bg-neutral-50 border rounded-xl px-4 py-3 text-neutral-900 focus:outline-none focus:border-purple-500" placeholder="Give this to the owner" />
               </div>
               <button type="submit" disabled={isCreating} className="w-full bg-neutral-900 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-neutral-800">
                 <Plus size={18} /> {isCreating ? "Creating..." : "Create Restaurant Database"}
