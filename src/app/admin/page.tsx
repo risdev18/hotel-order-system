@@ -13,7 +13,7 @@ const ADMIN_PASSWORD = "admin"; // Simple password as requested
 export default function UnifiedAdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
-  const [activeTab, setActiveTab] = useState<"orders" | "menu" | "tables">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "menu" | "tables" | "billing" | "settings">("orders");
 
   // Auth Submit
   const handleLogin = (e: React.FormEvent) => {
