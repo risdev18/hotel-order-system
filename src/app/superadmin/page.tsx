@@ -123,8 +123,7 @@ export default function SuperAdminDashboard() {
                     <p className="text-sm text-neutral-500 mt-1">Password: <span className="font-mono bg-neutral-100 px-2 py-0.5 rounded text-neutral-700">{rest.password}</span></p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-neutral-700">{rest._count.tables} Tables</p>
-                    <p className="text-sm font-bold text-neutral-700">{rest._count.orders} Orders</p>
+                    <p className="text-sm font-bold text-neutral-700">{rest.tableCount} Tables</p>
                   </div>
                 </div>
               ))
