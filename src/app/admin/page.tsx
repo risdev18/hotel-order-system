@@ -288,7 +288,7 @@ function MenuManagementTab({ restaurantId }: { restaurantId: string }) {
 
     try {
       const res = await fetch("/api/admin/menu/upload", {
-        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
+        headers: { "x-restaurant-id": restaurantId },
         method: "POST",
         body: formData,
       });
