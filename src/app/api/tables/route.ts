@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   let restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl?.searchParams?.get("restaurantId");
-  // Also allow body to have restaurantId
+  if (!restaurantId) return NextResponse.json({error: "Missing restaurantId"}, {status:400});
 
   try {
     const { tableNumber } = await req.json();
@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
     const newTable = await prisma.table.create({
       data: {
         tableNumber,
+        restaurantId,
         qrCodeUrl: "", // We can generate this later or immediately
       },
     });

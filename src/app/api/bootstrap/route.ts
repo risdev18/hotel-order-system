@@ -5,15 +5,23 @@ const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
   try {
+    let restaurant = await prisma.restaurant.findFirst();
+    if (!restaurant) {
+       restaurant = await prisma.restaurant.create({
+          data: { name: "The Royal Dhaba", slug: "the-royal-dhaba", password: "admin" }
+       });
+    }
+    const restaurantId = restaurant.id;
+
     // 1. Create Tables
     const tables = [];
     for (let i = 1; i <= 10; i++) {
       const tableNumber = `T${i.toString().padStart(2, "0")}`;
       tables.push(
         prisma.table.upsert({
-          where: { tableNumber },
+          where: { restaurantId_tableNumber: { restaurantId, tableNumber } },
           update: {},
-          create: { tableNumber },
+          create: { tableNumber, restaurantId },
         })
       );
     }
@@ -29,20 +37,12 @@ export async function POST(req: NextRequest) {
       { name: "Beverages", sortOrder: 6 },
     ];
 
-    const categories = [];
-    for (const cat of categoriesData) {
-      categories.push(
-        prisma.menuCategory.create({
-          data: cat,
-        })
-      );
-    }
     // Delete existing to avoid duplicates in bootstrap (simple approach)
     await prisma.menuItem.deleteMany();
-    await prisma.menuCategory.deleteMany();
+    await prisma.menuCategory.deleteMany({ where: { restaurantId } });
     
     const createdCats = await Promise.all(
-      categoriesData.map((cat) => prisma.menuCategory.create({ data: cat }))
+      categoriesData.map((cat) => prisma.menuCategory.create({ data: { ...cat, restaurantId } }))
     );
 
     // 3. Create Menu Items

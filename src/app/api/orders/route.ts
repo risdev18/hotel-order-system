@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
   let restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl?.searchParams?.get("restaurantId");
-  // Also allow body to have restaurantId
+  if (!restaurantId) return NextResponse.json({error: "Missing restaurantId"}, {status:400});
 
   try {
     const { tableId, items } = await req.json();
@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     let order = await prisma.order.findFirst({
       where: {
         tableId,
+        restaurantId,
         status: { notIn: ["paid"] },
         paymentStatus: "unpaid"
       }
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
       order = await prisma.order.create({
         data: {
           tableId,
+          restaurantId,
           status: "placed"
         }
       });

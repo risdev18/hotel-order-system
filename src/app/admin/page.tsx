@@ -22,9 +22,8 @@ export default function UnifiedAdminDashboard() {
     e.preventDefault();
     try {
       const res = await fetch("/api/admin/login", {
-        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
         body: JSON.stringify({ slug: slugInput, password: passwordInput })
       });
       const data = await res.json();
@@ -142,7 +141,8 @@ function LiveOrdersTab({ restaurantId }: { restaurantId: string }) {
   const fetchOrders = async () => {
     try {
       const res = await fetch("/api/admin/orders", {
-        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId }, headers: { "x-restaurant-id": restaurantId } });
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId } 
+      });
       const data = await res.json();
       setOrders(data.orders || []);
     } catch (error) {
@@ -161,9 +161,8 @@ function LiveOrdersTab({ restaurantId }: { restaurantId: string }) {
   const updateOrderStatus = async (orderId: string, status: string) => {
     try {
       await fetch("/api/admin/orders", {
-        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
         body: JSON.stringify({ orderId, status }),
       });
       fetchOrders();
@@ -264,7 +263,8 @@ function MenuManagementTab({ restaurantId }: { restaurantId: string }) {
   const fetchMenu = async () => {
     try {
       const res = await fetch("/api/menu", {
-        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId }, headers: { "x-restaurant-id": restaurantId } });
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId } 
+      });
       const data = await res.json();
       setCategories(data.categories || []);
     } catch (error) {
@@ -383,7 +383,8 @@ function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
   const fetchTables = async () => {
     try {
       const res = await fetch("/api/tables", {
-        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId }, headers: { "x-restaurant-id": restaurantId } });
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId } 
+      });
       const data = await res.json();
       setTables(data.tables || []);
     } catch (error) {
@@ -394,7 +395,8 @@ function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
   const fetchSettings = async () => {
     try {
       const res = await fetch("/api/admin/settings", {
-        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId }, headers: { "x-restaurant-id": restaurantId } });
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId } 
+      });
       const data = await res.json();
       if (data.settings) setSettings(data.settings);
     } catch (e) {}
@@ -411,9 +413,8 @@ function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
       for (const table of tables) {
         if (!table.qrCodeUrl) {
           await fetch("/api/tables/qr", {
-        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
             body: JSON.stringify({ tableId: table.id, hostUrl: window.location.origin })
           });
         }
@@ -493,7 +494,8 @@ function BillingTab({ restaurantId }: { restaurantId: string }) {
   const fetchOrders = async () => {
     try {
       const res = await fetch("/api/admin/orders", {
-        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId }, headers: { "x-restaurant-id": restaurantId } });
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId } 
+      });
       const data = await res.json();
       // Only show orders that are ready for billing (e.g. not paid yet)
       setOrders(data.orders?.filter((o: any) => o.paymentStatus === 'unpaid') || []);
@@ -505,7 +507,8 @@ function BillingTab({ restaurantId }: { restaurantId: string }) {
   const fetchSettings = async () => {
     try {
       const res = await fetch("/api/admin/settings", {
-        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId }, headers: { "x-restaurant-id": restaurantId } });
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId } 
+      });
       const data = await res.json();
       if (data.settings) setSettings(data.settings);
     } catch (e) {}
@@ -520,9 +523,8 @@ function BillingTab({ restaurantId }: { restaurantId: string }) {
     if (!selectedOrder) return;
     try {
       await fetch("/api/admin/orders/pay", {
-        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
         body: JSON.stringify({ orderId: selectedOrder.id, method })
       });
       alert("Payment recorded successfully!");
@@ -644,7 +646,8 @@ function SettingsTab({ restaurantId }: { restaurantId: string }) {
     const fetchSettings = async () => {
       try {
         const res = await fetch("/api/admin/settings", {
-        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId }, headers: { "x-restaurant-id": restaurantId } });
+          headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId } 
+        });
         const data = await res.json();
         if (data.settings) setSettings(data.settings);
       } catch (err) {
@@ -661,9 +664,8 @@ function SettingsTab({ restaurantId }: { restaurantId: string }) {
     setIsSaving(true);
     try {
       const res = await fetch("/api/admin/settings", {
-        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
         body: JSON.stringify(settings)
       });
       if (res.ok) {

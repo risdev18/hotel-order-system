@@ -9,7 +9,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "dummy" });
 
 export async function POST(req: NextRequest) {
   let restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl?.searchParams?.get("restaurantId");
-  // Also allow body to have restaurantId
+  if (!restaurantId) return NextResponse.json({error: "Missing restaurantId"}, {status:400});
 
   try {
     const formData = await req.formData();
@@ -82,11 +82,11 @@ export async function POST(req: NextRequest) {
       if (!item.name || !item.price || !item.categoryName) continue;
       
       // Find or create category
-      let category = await prisma.menuCategory.findFirst({ where: { name: item.categoryName } });
+      let category = await prisma.menuCategory.findFirst({ where: { name: item.categoryName, restaurantId } });
       if (!category) {
-        const lastCat = await prisma.menuCategory.findFirst({ orderBy: { sortOrder: 'desc' } });
+        const lastCat = await prisma.menuCategory.findFirst({ where: { restaurantId }, orderBy: { sortOrder: 'desc' } });
         category = await prisma.menuCategory.create({
-          data: { name: item.categoryName, sortOrder: (lastCat?.sortOrder || 0) + 1 }
+          data: { name: item.categoryName, sortOrder: (lastCat?.sortOrder || 0) + 1, restaurantId }
         });
       }
 

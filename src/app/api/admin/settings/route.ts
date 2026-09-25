@@ -10,9 +10,7 @@ export async function GET(req: NextRequest) {
   try {
     let settings = await prisma.restaurant.findUnique({ where: { id: restaurantId } });
     if (!settings) {
-      settings = await prisma.storeSettings.create({
-        data: { name: "The Royal Dhaba", tableCount: 30 }
-      });
+      return NextResponse.json({error: "Restaurant not found"}, {status:404});
     }
     return NextResponse.json({ settings });
   } catch (error) {
@@ -23,31 +21,24 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   let restaurantId = req.headers.get("x-restaurant-id");
+  if (!restaurantId) return NextResponse.json({error: "Missing restaurantId"}, {status:400});
 
   try {
     const { name, logoUrl, tableCount } = await req.json();
-    let settings = await prisma.restaurant.findUnique();
-    
-    if (settings) {
-      settings = await prisma.restaurant.update({
-        where: { id: restaurantId },
-        data: { name, logoUrl, tableCount: Number(tableCount) }
-      });
-    } else {
-      settings = await prisma.storeSettings.create({
-        data: { name, logoUrl, tableCount: Number(tableCount) }
-      });
-    }
+    let settings = await prisma.restaurant.update({
+      where: { id: restaurantId },
+      data: { name, logoUrl, tableCount: Number(tableCount) }
+    });
 
     // Generate missing tables if the count was increased
-    const currentTablesCount = await prisma.table.count();
+    const currentTablesCount = await prisma.table.count({ where: { restaurantId } });
     if (Number(tableCount) > currentTablesCount) {
       for (let i = currentTablesCount + 1; i <= Number(tableCount); i++) {
         const tNum = `T${i.toString().padStart(2, '0')}`;
         await prisma.table.upsert({
-          where: { tableNumber: tNum },
+          where: { restaurantId_tableNumber: { restaurantId, tableNumber: tNum } },
           update: {},
-          create: { tableNumber: tNum }
+          create: { tableNumber: tNum, restaurantId }
         });
       }
     }
