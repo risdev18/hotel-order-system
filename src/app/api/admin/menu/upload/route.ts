@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     while (retries > 0) {
       try {
         response = await groq.chat.completions.create({
-          model: "llama-3.2-90b-vision-preview",
+          model: "llama-3.2-11b-vision-preview",
           messages: [
             {
               role: "user",
