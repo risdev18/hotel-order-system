@@ -18,7 +18,7 @@ export default function SuperAdminDashboard() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === "superadmin123") {
+    if (password === "GanpatiBappaMorya") {
       setIsAuthenticated(true);
       fetchRestaurants();
     } else {
