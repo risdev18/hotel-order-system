@@ -1,0 +1,569 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { 
+  Clock, CheckCircle2, ChefHat, Check, Receipt, 
+  Lock, Upload, Sparkles, Loader2, Printer, RefreshCw,
+  LayoutDashboard, Utensils, Grid
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const ADMIN_PASSWORD = "admin"; // Simple password as requested
+
+export default function UnifiedAdminDashboard() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [activeTab, setActiveTab] = useState<"orders" | "menu" | "tables">("orders");
+
+  // Auth Submit
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+    } else {
+      alert("Incorrect password!");
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4">
+        <form onSubmit={handleLogin} className="bg-neutral-900 p-8 rounded-3xl w-full max-w-sm border border-neutral-800 shadow-2xl">
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center">
+              <Lock size={32} />
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold text-white text-center mb-2">Admin Access</h2>
+          <p className="text-neutral-500 text-center text-sm mb-6">Enter password to manage restaurant</p>
+          
+          <input 
+            type="password" 
+            value={passwordInput}
+            onChange={(e) => setPasswordInput(e.target.value)}
+            placeholder="Enter Password..."
+            className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-colors mb-4"
+            autoFocus
+          />
+          <button 
+            type="submit"
+            className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold py-3 rounded-xl hover:opacity-90 active:scale-[0.98] transition-all"
+          >
+            Unlock Dashboard
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-neutral-100 flex flex-col md:flex-row print:bg-white">
+      {/* Sidebar Navigation */}
+      <aside className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-neutral-200 flex flex-col print:hidden shrink-0">
+        <div className="p-6 border-b border-neutral-200">
+          <h2 className="text-xl font-bold bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
+            Admin Panel
+          </h2>
+        </div>
+        <nav className="flex-1 p-4 flex md:flex-col gap-2 overflow-x-auto">
+          <button 
+            onClick={() => setActiveTab("orders")}
+            className={cn("flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors whitespace-nowrap", activeTab === "orders" ? "bg-orange-50 text-orange-600" : "text-neutral-600 hover:bg-neutral-50")}
+          >
+            <LayoutDashboard size={20} /> Live Orders
+          </button>
+          <button 
+            onClick={() => setActiveTab("menu")}
+            className={cn("flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors whitespace-nowrap", activeTab === "menu" ? "bg-orange-50 text-orange-600" : "text-neutral-600 hover:bg-neutral-50")}
+          >
+            <Utensils size={20} /> Menu Settings
+          </button>
+          <button 
+            onClick={() => setActiveTab("tables")}
+            className={cn("flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors whitespace-nowrap", activeTab === "tables" ? "bg-orange-50 text-orange-600" : "text-neutral-600 hover:bg-neutral-50")}
+          >
+            <Grid size={20} /> Tables & QR
+          </button>
+          <button 
+            onClick={() => setActiveTab("billing")}
+            className={cn("flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors whitespace-nowrap", activeTab === "billing" ? "bg-orange-50 text-orange-600" : "text-neutral-600 hover:bg-neutral-50")}
+          >
+            <Receipt size={20} /> Billing & Checkout
+          </button>
+        </nav>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto print:overflow-visible">
+        {activeTab === "orders" && <LiveOrdersTab />}
+        {activeTab === "menu" && <MenuManagementTab />}
+        {activeTab === "tables" && <TablesManagementTab />}
+        {activeTab === "billing" && <BillingTab />}
+      </main>
+    </div>
+  );
+}
+
+// ==========================================
+// TAB 1: LIVE ORDERS
+// ==========================================
+function LiveOrdersTab() {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch("/api/admin/orders");
+      const data = await res.json();
+      setOrders(data.orders || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const updateOrderStatus = async (orderId: string, status: string) => {
+    try {
+      await fetch("/api/admin/orders", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, status }),
+      });
+      fetchOrders();
+    } catch (error) {
+      console.error("Failed to update status", error);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="p-8 flex justify-center"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" /></div>;
+  }
+
+  return (
+    <div className="p-4 md:p-8">
+      <h1 className="text-3xl font-bold mb-8 text-neutral-900">Live Orders</h1>
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {orders.map((order) => {
+          const isPending = order.status === "placed";
+          const isPreparing = order.status === "preparing";
+          const isServed = order.status === "served";
+
+          return (
+            <div key={order.id} className={cn("bg-white rounded-2xl p-6 border-l-4 shadow-sm", 
+              isPending ? "border-red-500" : isPreparing ? "border-orange-500" : "border-green-500"
+            )}>
+              <div className="flex justify-between items-start mb-4 border-b pb-4">
+                <div>
+                  <h3 className="text-2xl font-black text-neutral-900">{order.table.tableNumber}</h3>
+                  <p className="text-sm text-neutral-500 flex items-center gap-1 mt-1">
+                    <Clock size={14} /> 
+                    {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+                <div className={cn("px-3 py-1 rounded-full text-xs font-bold uppercase",
+                  isPending ? "bg-red-100 text-red-700" : isPreparing ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"
+                )}>
+                  {order.status}
+                </div>
+              </div>
+
+              <div className="space-y-3 mb-6">
+                {order.items.map((item: any) => (
+                  <div key={item.id} className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-lg bg-neutral-100 px-2 rounded-md text-neutral-800">{item.quantity}x</span>
+                      <span className="font-medium text-neutral-700">{item.menuItem.name}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                {isPending && (
+                  <button onClick={() => updateOrderStatus(order.id, "preparing")} className="flex-1 bg-neutral-900 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-neutral-800 transition-colors">
+                    <ChefHat size={18} /> Accept & Prepare
+                  </button>
+                )}
+                {isPreparing && (
+                  <button onClick={() => updateOrderStatus(order.id, "served")} className="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-green-600 transition-colors">
+                    <CheckCircle2 size={18} /> Mark Served
+                  </button>
+                )}
+                {isServed && order.paymentStatus === "unpaid" && (
+                  <button onClick={() => alert("Billing module coming soon!")} className="flex-1 bg-blue-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-600 transition-colors">
+                    <Receipt size={18} /> Generate Bill
+                  </button>
+                )}
+                {order.paymentStatus === "paid" && (
+                   <button disabled className="flex-1 bg-neutral-100 text-neutral-500 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+                    <Check size={18} /> Paid & Closed
+                 </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+
+        {orders.length === 0 && (
+          <div className="col-span-full py-20 flex flex-col items-center justify-center text-neutral-400">
+            <CheckCircle2 size={48} className="mb-4 opacity-50" />
+            <p className="text-xl font-medium">No active orders</p>
+            <p>Kitchen is clear. Waiting for new orders to arrive.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// TAB 2: MENU UPLOAD & MANAGEMENT
+// ==========================================
+function MenuManagementTab() {
+  const [categories, setCategories] = useState<any[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState("");
+
+  const fetchMenu = async () => {
+    try {
+      const res = await fetch("/api/menu");
+      const data = await res.json();
+      setCategories(data.categories || []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchMenu();
+  }, []);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadResult("");
+
+    const formData = new FormData();
+    formData.append("menuImage", file);
+
+    try {
+      const res = await fetch("/api/admin/menu/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        setUploadResult(`Successfully added ${data.itemsInserted} items!`);
+        fetchMenu();
+      } else {
+        setUploadResult(`Error: ${data.error}`);
+      }
+    } catch (error: any) {
+      setUploadResult(`Upload failed: ${error.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="p-4 md:p-8 max-w-5xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-neutral-900">Menu Management</h1>
+          <p className="text-neutral-500 mt-2">Manage your restaurant offerings</p>
+        </div>
+        
+        <div className="bg-orange-50 border border-orange-200 p-4 rounded-2xl flex items-center gap-4 w-full md:w-auto">
+          <div>
+            <h3 className="font-bold text-orange-900 flex items-center gap-2">
+              <Sparkles size={18} className="text-orange-500" />
+              Auto-Create from Photo
+            </h3>
+            <p className="text-sm text-orange-700">Upload your physical menu card</p>
+          </div>
+          <label className="relative cursor-pointer bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
+            {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+            <span>{isUploading ? "Scanning..." : "Upload"}</span>
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              onChange={handleFileUpload}
+              disabled={isUploading}
+            />
+          </label>
+        </div>
+      </div>
+
+      {uploadResult && (
+        <div className={`p-4 mb-8 rounded-xl font-medium ${uploadResult.includes("Error") || uploadResult.includes("failed") ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+          {uploadResult}
+        </div>
+      )}
+
+      <div className="space-y-8">
+        {categories.map(cat => (
+          <div key={cat.id} className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-200">
+            <h2 className="text-xl font-bold mb-4 flex items-center justify-between border-b pb-2 text-neutral-900">
+              {cat.name}
+              <span className="text-sm font-normal text-neutral-500 bg-neutral-100 px-3 py-1 rounded-full">{cat.items.length} Items</span>
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {cat.items.map((item: any) => (
+                <div key={item.id} className="border border-neutral-100 bg-neutral-50 p-4 rounded-xl flex justify-between items-center group hover:border-orange-200 transition-colors">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={`w-3 h-3 border rounded-sm flex items-center justify-center shrink-0 ${item.vegFlag ? "border-green-500" : "border-red-500"}`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${item.vegFlag ? "bg-green-500" : "bg-red-500"}`} />
+                      </div>
+                      <h4 className="font-bold text-neutral-800">{item.name}</h4>
+                    </div>
+                    <p className="text-orange-600 font-medium">₹{item.price}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// TAB 3: TABLES & QR
+// ==========================================
+function TablesManagementTab() {
+  const [tables, setTables] = useState<any[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const fetchTables = async () => {
+    try {
+      const res = await fetch("/api/tables");
+      const data = await res.json();
+      setTables(data.tables || []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchTables();
+  }, []);
+
+  const generateAllQRs = async () => {
+    setIsGenerating(true);
+    try {
+      for (const table of tables) {
+        if (!table.qrCodeUrl) {
+          await fetch("/api/tables/qr", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tableId: table.id, hostUrl: window.location.origin })
+          });
+        }
+      }
+      await fetchTables();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to generate some QR codes.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div className="p-4 md:p-8 max-w-6xl mx-auto print:p-0 print:max-w-none print:w-full">
+      <div className="flex justify-between items-end mb-8 print:hidden">
+        <div>
+          <h1 className="text-3xl font-bold text-neutral-900">Tables & QR Codes</h1>
+          <p className="text-neutral-500 mt-2">Manage seating and print QR codes</p>
+        </div>
+        <div className="flex gap-4">
+          <button 
+            onClick={generateAllQRs}
+            disabled={isGenerating}
+            className="bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-xl font-medium flex items-center gap-2 hover:bg-neutral-50 transition-colors"
+          >
+            <RefreshCw size={18} className={isGenerating ? "animate-spin" : ""} />
+            Generate Missing QRs
+          </button>
+          <button 
+            onClick={() => window.print()}
+            className="bg-neutral-900 text-white px-6 py-2 rounded-xl font-medium flex items-center gap-2 hover:bg-neutral-800 transition-colors shadow-md"
+          >
+            <Printer size={18} />
+            Print QR Sheet
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 print:grid-cols-3 print:gap-8 print:w-full">
+        {tables.map(table => (
+          <div key={table.id} className="bg-white rounded-2xl p-6 border border-neutral-200 shadow-sm flex flex-col items-center justify-center print:border-2 print:border-black print:shadow-none break-inside-avoid">
+            <h3 className="text-3xl font-black text-neutral-800 mb-1">{table.tableNumber}</h3>
+            <p className="text-xs text-neutral-400 mb-4 print:text-black font-medium">Scan to Order</p>
+            
+            {table.qrCodeUrl ? (
+              <img src={table.qrCodeUrl} alt={`QR for ${table.tableNumber}`} className="w-32 h-32 print:w-48 print:h-48" />
+            ) : (
+              <div className="w-32 h-32 bg-neutral-100 flex items-center justify-center rounded-xl text-neutral-400 text-sm print:hidden">
+                No QR
+              </div>
+            )}
+            
+            <div className="mt-4 pt-4 border-t border-dashed border-neutral-200 w-full text-center print:border-black print:border-t-2">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-orange-500 print:text-black">
+                The Royal Dhaba
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// TAB 4: BILLING & CHECKOUT
+// ==========================================
+function BillingTab() {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch("/api/admin/orders");
+      const data = await res.json();
+      // Only show orders that are ready for billing (e.g. not paid yet)
+      setOrders(data.orders?.filter((o: any) => o.paymentStatus === 'unpaid') || []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const handlePay = async (method: string) => {
+    if (!selectedOrder) return;
+    try {
+      await fetch("/api/admin/orders/pay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: selectedOrder.id, method })
+      });
+      alert("Payment recorded successfully!");
+      setSelectedOrder(null);
+      fetchOrders();
+    } catch (error) {
+      alert("Failed to process payment");
+    }
+  };
+
+  const calculateSubtotal = (order: any) => {
+    return order.items.reduce((total: number, item: any) => total + (item.quantity * item.priceAtOrderTime), 0);
+  };
+
+  return (
+    <div className="p-4 md:p-8 max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
+      {/* List of Unpaid Orders */}
+      <div className="flex-1 space-y-4">
+        <h1 className="text-3xl font-bold text-neutral-900 mb-6">Pending Bills</h1>
+        {orders.length === 0 && <p className="text-neutral-500">No pending bills.</p>}
+        {orders.map(order => (
+          <button 
+            key={order.id}
+            onClick={() => setSelectedOrder(order)}
+            className={cn("w-full text-left bg-white rounded-2xl p-6 border-2 transition-all shadow-sm", 
+              selectedOrder?.id === order.id ? "border-orange-500" : "border-neutral-200 hover:border-orange-200"
+            )}
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-2xl font-black text-neutral-900">{order.table.tableNumber}</h3>
+                <p className="text-sm text-neutral-500">{order.items.length} items</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xl font-bold text-orange-600">₹{calculateSubtotal(order)}</p>
+                <div className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-bold rounded-full mt-1 uppercase inline-block">
+                  {order.status}
+                </div>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Selected Order Bill View */}
+      {selectedOrder && (
+        <div className="flex-[1.5] bg-white rounded-2xl border border-neutral-200 shadow-xl p-8 print:shadow-none print:border-black print:border-2">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-black text-neutral-900 tracking-tight">THE ROYAL DHABA</h2>
+            <p className="text-neutral-500 text-sm">Table {selectedOrder.table.tableNumber} Receipt</p>
+          </div>
+
+          <div className="space-y-4 mb-8">
+            <div className="flex font-bold text-neutral-400 text-sm uppercase border-b pb-2 print:border-black">
+              <span className="flex-[3]">Item</span>
+              <span className="flex-1 text-center">Qty</span>
+              <span className="flex-1 text-right">Price</span>
+            </div>
+            {selectedOrder.items.map((item: any) => (
+              <div key={item.id} className="flex text-neutral-800 font-medium border-b border-neutral-100 pb-3 print:border-black">
+                <span className="flex-[3] pr-2">{item.menuItem.name}</span>
+                <span className="flex-1 text-center">{item.quantity}</span>
+                <span className="flex-1 text-right">₹{item.priceAtOrderTime * item.quantity}</span>
+              </div>
+            ))}
+          </div>
+
+          {(() => {
+            const subtotal = calculateSubtotal(selectedOrder);
+            const gst = subtotal * 0.05;
+            const total = subtotal + gst;
+            return (
+              <div className="space-y-2 mb-8">
+                <div className="flex justify-between text-neutral-500 font-medium">
+                  <span>Subtotal</span>
+                  <span>₹{subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-neutral-500 font-medium">
+                  <span>GST (5%)</span>
+                  <span>₹{gst.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-2xl font-black text-neutral-900 pt-4 border-t border-neutral-200 print:border-black mt-4">
+                  <span>Grand Total</span>
+                  <span>₹{total.toFixed(2)}</span>
+                </div>
+              </div>
+            );
+          })()}
+
+          <div className="grid grid-cols-2 gap-4 print:hidden mt-12">
+            <button onClick={() => window.print()} className="col-span-2 py-4 rounded-xl border border-neutral-200 font-bold text-neutral-700 hover:bg-neutral-50 flex items-center justify-center gap-2">
+              <Printer size={18} /> Print Thermal Receipt
+            </button>
+            <button onClick={() => handlePay("cash")} className="py-4 rounded-xl bg-green-500 text-white font-bold hover:bg-green-600 shadow-md">
+              Mark Paid (Cash)
+            </button>
+            <button onClick={() => handlePay("online")} className="py-4 rounded-xl bg-blue-500 text-white font-bold hover:bg-blue-600 shadow-md">
+              Mark Paid (Online)
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
