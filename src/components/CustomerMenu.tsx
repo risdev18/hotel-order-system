@@ -6,7 +6,7 @@ import { ShoppingCart, Plus, Minus, Search, UtensilsCrossed, BellRing } from "lu
 import { useCartStore } from "@/store/useCartStore";
 import { cn } from "@/lib/utils";
 
-export default function CustomerMenu({ tableId, tableNumber, categories }: any) {
+export default function CustomerMenu({ tableId, tableNumber, categories, restaurantId }: any) {
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "veg" | "nonveg">("all");
@@ -22,7 +22,7 @@ export default function CustomerMenu({ tableId, tableNumber, categories }: any) 
   const handlePlaceOrder = async () => {
     if (cart.items.length === 0) return;
     try {
-      const res = await fetch('/api/orders', {
+      const res = await fetch(`/api/orders?restaurantId=${restaurantId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tableId, items: cart.items })

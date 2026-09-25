@@ -51,7 +51,7 @@ export default async function OrderPage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-neutral-950 text-white selection:bg-red-500/30">
-      <CustomerMenu tableId={table.id} tableNumber={table.tableNumber} categories={categories} restaurantName={restaurant.name} restaurantLogo={restaurant.logoUrl} />
+      <CustomerMenu tableId={table.id} tableNumber={table.tableNumber} categories={categories} restaurantName={restaurant.name} restaurantLogo={restaurant.logoUrl} restaurantId={restaurant.id} />
     </main>
   );
 }
