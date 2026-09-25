@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { db } from "@/lib/firebase-admin";
 
 const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
