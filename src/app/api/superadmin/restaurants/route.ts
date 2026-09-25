@@ -41,6 +41,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "Restaurant created successfully", id: docRef.id, slug });
   } catch (error: any) {
     console.error(error);
-    return NextResponse.json({ error: "Failed to create restaurant" }, { status: 500 });
+    return NextResponse.json({ error: "DB Error: " + (error.message || "Unknown") }, { status: 500 });
   }
 }
