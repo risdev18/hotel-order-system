@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     
     let response = null;
     let retries = 3;
-    let delay = 1000;
+    let delay = 15000;
     
     while (retries > 0) {
       try {
@@ -57,10 +57,10 @@ export async function POST(req: NextRequest) {
         const errorMsg = err.message || "";
         // Check for 503 Overload or 429 Quota Exceeded
         if ((errorMsg.includes("503") || errorMsg.includes("429") || errorMsg.includes("RESOURCE_EXHAUSTED")) && retries > 1) {
-          console.log(`API limit reached (503/429). Retrying in ${delay}ms...`);
+          console.log(`API limit reached. Waiting for quota to reset in ${delay/1000}s...`);
           await new Promise(r => setTimeout(r, delay));
           retries--;
-          delay *= 2; // Exponential backoff (e.g. 1s -> 2s -> 4s)
+          delay *= 1.5; // Exponential backoff (e.g. 15s -> 22s -> 33s)
         } else {
           throw err;
         }
