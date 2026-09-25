@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { 
   Clock, CheckCircle2, ChefHat, Check, Receipt, 
   Lock, Upload, Sparkles, Loader2, Printer, RefreshCw,
-  LayoutDashboard, Utensils, Grid
+  LayoutDashboard, Utensils, Grid, Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -90,6 +90,12 @@ export default function UnifiedAdminDashboard() {
           >
             <Receipt size={20} /> Billing & Checkout
           </button>
+          <button 
+            onClick={() => setActiveTab("settings")}
+            className={cn("flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors whitespace-nowrap", activeTab === "settings" ? "bg-orange-50 text-orange-600" : "text-neutral-600 hover:bg-neutral-50")}
+          >
+            <Settings size={20} /> Store Settings
+          </button>
         </nav>
       </aside>
 
@@ -99,6 +105,7 @@ export default function UnifiedAdminDashboard() {
         {activeTab === "menu" && <MenuManagementTab />}
         {activeTab === "tables" && <TablesManagementTab />}
         {activeTab === "billing" && <BillingTab />}
+        {activeTab === "settings" && <SettingsTab />}
       </main>
     </div>
   );
@@ -564,6 +571,119 @@ function BillingTab() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ==========================================
+// TAB 5: STORE SETTINGS
+// ==========================================
+function SettingsTab() {
+  const [settings, setSettings] = useState({ name: "The Royal Dhaba", logoUrl: "", tableCount: 30 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch("/api/admin/settings");
+        const data = await res.json();
+        if (data.settings) setSettings(data.settings);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings)
+      });
+      if (res.ok) {
+        alert("Store settings updated successfully! Missing QR tables have been auto-generated.");
+      } else {
+        alert("Failed to save settings.");
+      }
+    } catch (err) {
+      alert("Error saving settings.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) return <div className="p-8 flex justify-center"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" /></div>;
+
+  return (
+    <div className="p-4 md:p-8 max-w-3xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-neutral-900">Store Settings</h1>
+        <p className="text-neutral-500 mt-2">Customize your restaurant branding for bills and QRs</p>
+      </div>
+
+      <form onSubmit={handleSave} className="bg-white rounded-2xl border border-neutral-200 p-8 shadow-sm space-y-6">
+        <div>
+          <label className="block text-sm font-bold text-neutral-700 mb-2">Restaurant Name</label>
+          <input 
+            type="text" 
+            value={settings.name}
+            onChange={e => setSettings({...settings, name: e.target.value})}
+            className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 transition-colors"
+            placeholder="e.g. Spice Grill"
+            required
+          />
+          <p className="text-xs text-neutral-400 mt-2">This name will be printed on all thermal receipts and QR codes.</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-neutral-700 mb-2">Logo Image URL (Optional)</label>
+          <input 
+            type="url" 
+            value={settings.logoUrl || ""}
+            onChange={e => setSettings({...settings, logoUrl: e.target.value})}
+            className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 transition-colors"
+            placeholder="https://example.com/logo.png"
+          />
+          {settings.logoUrl && (
+            <div className="mt-4 p-4 border border-neutral-200 rounded-xl inline-block bg-neutral-50">
+              <p className="text-xs text-neutral-400 mb-2 font-bold uppercase tracking-wider">Preview:</p>
+              <img src={settings.logoUrl} alt="Logo Preview" className="h-16 object-contain" />
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-neutral-700 mb-2">Total Number of Tables</label>
+          <input 
+            type="number" 
+            min="1"
+            max="150"
+            value={settings.tableCount}
+            onChange={e => setSettings({...settings, tableCount: parseInt(e.target.value)})}
+            className="w-full md:w-1/3 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 transition-colors"
+            required
+          />
+          <p className="text-xs text-neutral-400 mt-2">If you increase this number, new tables (e.g. T31, T32) will be automatically generated for you in the Tables & QR tab.</p>
+        </div>
+
+        <div className="pt-6 border-t border-neutral-100 flex justify-end">
+          <button 
+            type="submit"
+            disabled={isSaving}
+            className="bg-neutral-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-neutral-800 transition-colors flex items-center gap-2"
+          >
+            {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Settings size={18} />}
+            Save Settings
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
