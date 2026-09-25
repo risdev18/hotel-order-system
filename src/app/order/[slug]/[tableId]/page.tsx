@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
 import { notFound } from "next/navigation";
 import CustomerMenu from "@/components/CustomerMenu";
-
-const prisma = new PrismaClient();
+import { db } from "@/lib/firebase-admin";
 
 interface PageProps {
   params: {
@@ -16,38 +14,38 @@ export default async function OrderPage({ params }: PageProps) {
   const tableId = (await params).tableId;
 
   // Find the restaurant
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { slug }
-  });
-
-  if (!restaurant) {
+  const restSnap = await db.collection("restaurants").where("slug", "==", slug).get();
+  if (restSnap.empty) {
     notFound();
   }
+  const restaurant = { id: restSnap.docs[0].id, ...restSnap.docs[0].data() } as any;
 
   // Find the specific table for this restaurant
-  const table = await prisma.table.findUnique({
-    where: {
-      restaurantId_tableNumber: {
-        restaurantId: restaurant.id,
-        tableNumber: tableId
-      }
-    }
-  });
+  const tableSnap = await db.collection("tables")
+    .where("restaurantId", "==", restaurant.id)
+    .where("tableNumber", "==", tableId)
+    .get();
 
-  if (!table) {
+  if (tableSnap.empty) {
     notFound();
   }
+  const table = { id: tableSnap.docs[0].id, ...tableSnap.docs[0].data() } as any;
 
   // Fetch menu just for this restaurant
-  const categories = await prisma.menuCategory.findMany({
-    where: { restaurantId: restaurant.id },
-    orderBy: { sortOrder: 'asc' },
-    include: {
-      items: {
-        where: { isAvailable: true }
-      }
-    }
-  });
+  const categoriesSnap = await db.collection("menuCategories").where("restaurantId", "==", restaurant.id).get();
+  const itemsSnap = await db.collection("menuItems").where("restaurantId", "==", restaurant.id).where("isAvailable", "==", true).get();
+
+  const items = itemsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  
+  const categories = categoriesSnap.docs.map(doc => {
+    const catData = doc.data();
+    return {
+      id: doc.id,
+      name: catData.name,
+      sortOrder: catData.sortOrder || 0,
+      items: items.filter((item: any) => item.categoryId === doc.id)
+    };
+  }).sort((a, b) => a.sortOrder - b.sortOrder);
 
   return (
     <main className="min-h-screen bg-neutral-950 text-white selection:bg-red-500/30">

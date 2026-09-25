@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { db } from "@/lib/firebase-admin";
 
 export async function POST(req: NextRequest) {
   let restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl?.searchParams?.get("restaurantId");
@@ -15,43 +13,56 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if there is an active unpaid order for this table to append to, or create new.
-    let order = await prisma.order.findFirst({
-      where: {
-        tableId,
-        restaurantId,
-        status: { notIn: ["paid"] },
-        paymentStatus: "unpaid"
+    let orderSnapshot = await db.collection("orders")
+      .where("tableId", "==", tableId)
+      .where("restaurantId", "==", restaurantId)
+      .where("paymentStatus", "==", "unpaid")
+      .get();
+      
+    // Filter out "paid" statuses if needed, though paymentStatus unpaid handles it.
+    let order: any = null;
+    let orderRef: any = null;
+    
+    if (!orderSnapshot.empty) {
+      for (const doc of orderSnapshot.docs) {
+        if (doc.data().status !== "paid") {
+          order = { id: doc.id, ...doc.data() };
+          orderRef = doc.ref;
+          break;
+        }
       }
-    });
+    }
 
     if (!order) {
-      order = await prisma.order.create({
-        data: {
-          tableId,
-          restaurantId,
-          status: "placed"
-        }
+      const doc = await db.collection("orders").add({
+        tableId,
+        restaurantId,
+        status: "placed",
+        paymentStatus: "unpaid",
+        createdAt: new Date().toISOString()
       });
+      orderRef = doc;
+      order = { id: doc.id, tableId, restaurantId, status: "placed" };
     } else {
-      // If the order was already preparing or served, we need to push it back to the kitchen!
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { status: "placed" }
-      });
+      await orderRef.update({ status: "placed", updatedAt: new Date().toISOString() });
       order.status = "placed";
     }
 
     // Create Order Items
-    const orderItemsData = items.map((item: any) => ({
-      orderId: order!.id,
-      menuItemId: item.id,
-      quantity: item.quantity,
-      priceAtOrderTime: item.price
-    }));
-
-    await prisma.orderItem.createMany({
-      data: orderItemsData
-    });
+    const batch = db.batch();
+    for (const item of items) {
+      const itemRef = db.collection("orderItems").doc();
+      batch.set(itemRef, {
+        orderId: order.id,
+        menuItemId: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        priceAtOrderTime: item.price,
+        status: "pending",
+        createdAt: new Date().toISOString()
+      });
+    }
+    await batch.commit();
 
     return NextResponse.json({ message: "Order placed successfully", orderId: order.id });
   } catch (error) {

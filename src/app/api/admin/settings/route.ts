@@ -1,51 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { db } from "@/lib/firebase-admin";
 
 export async function GET(req: NextRequest) {
-  const restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl.searchParams.get("restaurantId");
-  if (!restaurantId) return NextResponse.json({error: "Missing restaurantId"}, {status:400});
+  const restaurantId = req.headers.get("x-restaurant-id");
+  if (!restaurantId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    let settings = await prisma.restaurant.findUnique({ where: { id: restaurantId } });
-    if (!settings) {
-      return NextResponse.json({error: "Restaurant not found"}, {status:404});
-    }
-    return NextResponse.json({ settings });
+    const doc = await db.collection("restaurants").doc(restaurantId).get();
+    if (!doc.exists) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ settings: doc.data() });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Failed to fetch settings" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load settings" }, { status: 500 });
   }
 }
 
 export async function PUT(req: NextRequest) {
-  let restaurantId = req.headers.get("x-restaurant-id");
-  if (!restaurantId) return NextResponse.json({error: "Missing restaurantId"}, {status:400});
+  const restaurantId = req.headers.get("x-restaurant-id");
+  if (!restaurantId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const { name, logoUrl, tableCount } = await req.json();
-    let settings = await prisma.restaurant.update({
-      where: { id: restaurantId },
-      data: { name, logoUrl, tableCount: Number(tableCount) }
+    const { name, tableCount } = await req.json();
+    await db.collection("restaurants").doc(restaurantId).update({
+      name,
+      tableCount: parseInt(tableCount)
     });
-
-    // Generate missing tables if the count was increased
-    const currentTablesCount = await prisma.table.count({ where: { restaurantId } });
-    if (Number(tableCount) > currentTablesCount) {
-      for (let i = currentTablesCount + 1; i <= Number(tableCount); i++) {
-        const tNum = `T${i.toString().padStart(2, '0')}`;
-        await prisma.table.upsert({
-          where: { restaurantId_tableNumber: { restaurantId, tableNumber: tNum } },
-          update: {},
-          create: { tableNumber: tNum, restaurantId }
-        });
-      }
-    }
-
-    return NextResponse.json({ settings });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(error);
     return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
   }
 }

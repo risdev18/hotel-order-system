@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { db } from "@/lib/firebase-admin";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,33 +14,35 @@ export async function POST(req: NextRequest) {
     }
 
     // Find or create category
-    let category = await prisma.menuCategory.findFirst({
-      where: {
-        restaurantId,
-        name: { equals: categoryName, mode: "insensitive" }
-      }
-    });
+    let categorySnapshot = await db.collection("menuCategories")
+      .where("restaurantId", "==", restaurantId)
+      .where("name", "==", categoryName)
+      .get();
 
-    if (!category) {
-      category = await prisma.menuCategory.create({
-        data: {
-          name: categoryName,
-          restaurantId,
-        }
+    let categoryId = "";
+    if (categorySnapshot.empty) {
+      const catRef = await db.collection("menuCategories").add({
+        name: categoryName,
+        restaurantId,
+        sortOrder: 0
       });
+      categoryId = catRef.id;
+    } else {
+      categoryId = categorySnapshot.docs[0].id;
     }
 
     // Create item
-    const item = await prisma.menuItem.create({
-      data: {
-        name,
-        price: parseFloat(price.toString()),
-        vegFlag: vegFlag ?? true,
-        categoryId: category.id,
-      }
+    const itemRef = await db.collection("menuItems").add({
+      name,
+      price: parseFloat(price.toString()),
+      vegFlag: vegFlag ?? true,
+      categoryId,
+      isAvailable: true,
+      restaurantId, // Keep it for easier querying
+      createdAt: new Date().toISOString()
     });
 
-    return NextResponse.json({ success: true, item });
+    return NextResponse.json({ success: true, item: { id: itemRef.id, name, price } });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

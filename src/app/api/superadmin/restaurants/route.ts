@@ -1,43 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { db } from "@/lib/firebase-admin";
 
 export async function GET() {
   try {
-    const restaurants = await prisma.restaurant.findMany({
-      include: {
-        _count: {
-          select: { tables: true, orders: true }
-        }
-      }
-    });
+    const snapshot = await db.collection("restaurants").get();
+    const restaurants = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     return NextResponse.json({ restaurants });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error(error);
+    return NextResponse.json({ error: "Failed to fetch restaurants" }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const data = await req.json();
-    
-    // Check if slug exists
-    const existing = await prisma.restaurant.findUnique({ where: { slug: data.slug } });
-    if (existing) {
-      return NextResponse.json({ error: "URL slug is already taken." }, { status: 400 });
+    const { name, tableCount, password } = await req.json();
+
+    if (!name || !tableCount || !password) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const restaurant = await prisma.restaurant.create({
-      data: {
-        name: data.name,
-        slug: data.slug,
-        password: data.password
-      }
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    
+    // Check if slug exists
+    const existing = await db.collection("restaurants").where("slug", "==", slug).get();
+    if (!existing.empty) {
+      return NextResponse.json({ error: "Restaurant already exists" }, { status: 400 });
+    }
+
+    const docRef = await db.collection("restaurants").add({
+      name,
+      slug,
+      tableCount: parseInt(tableCount),
+      password,
+      createdAt: new Date().toISOString()
     });
 
-    return NextResponse.json({ restaurant });
+    return NextResponse.json({ message: "Restaurant created successfully", id: docRef.id, slug });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error(error);
+    return NextResponse.json({ error: "Failed to create restaurant" }, { status: 500 });
   }
 }

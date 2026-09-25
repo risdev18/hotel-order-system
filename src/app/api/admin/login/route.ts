@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { db } from "@/lib/firebase-admin";
 
 export async function POST(req: NextRequest) {
   try {
     const { slug, password } = await req.json();
 
-    const restaurant = await prisma.restaurant.findUnique({
-      where: { slug }
-    });
+    const snapshot = await db.collection("restaurants").where("slug", "==", slug).get();
 
-    if (!restaurant) {
+    if (snapshot.empty) {
       return NextResponse.json({ error: "Restaurant not found." }, { status: 404 });
     }
+
+    const doc = snapshot.docs[0];
+    const restaurant = { id: doc.id, ...doc.data() } as any;
 
     if (restaurant.password !== password) {
       return NextResponse.json({ error: "Invalid password." }, { status: 401 });
@@ -26,6 +25,7 @@ export async function POST(req: NextRequest) {
       slug: restaurant.slug
     });
   } catch (error: any) {
+    console.error("Login error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

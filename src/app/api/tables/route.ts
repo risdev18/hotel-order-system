@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { db } from "@/lib/firebase-admin";
 
 export async function GET(req: NextRequest) {
-  const restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl.searchParams.get("restaurantId");
-  if (!restaurantId) return NextResponse.json({error: "Missing restaurantId"}, {status:400});
+  const restaurantId = req.headers.get("x-restaurant-id");
+  if (!restaurantId) return NextResponse.json({ error: "Missing restaurantId" }, { status: 400 });
 
   try {
-    const tables = await prisma.table.findMany({
-      where: { restaurantId },
-      orderBy: { tableNumber: "asc" },
-    });
+    const snapshot = await db.collection("tables").where("restaurantId", "==", restaurantId).get();
+    const tables = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     return NextResponse.json({ tables });
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch tables" }, { status: 500 });
@@ -19,25 +15,31 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  let restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl?.searchParams?.get("restaurantId");
-  if (!restaurantId) return NextResponse.json({error: "Missing restaurantId"}, {status:400});
+  const restaurantId = req.headers.get("x-restaurant-id");
+  if (!restaurantId) return NextResponse.json({ error: "Missing restaurantId" }, { status: 400 });
 
   try {
     const { tableNumber } = await req.json();
-
-    if (!tableNumber) {
-      return NextResponse.json({ error: "Table number is required" }, { status: 400 });
+    
+    // Check if table exists
+    const existing = await db.collection("tables")
+      .where("restaurantId", "==", restaurantId)
+      .where("tableNumber", "==", tableNumber)
+      .get();
+      
+    if (!existing.empty) {
+      return NextResponse.json({ error: "Table already exists" }, { status: 400 });
     }
 
-    const newTable = await prisma.table.create({
-      data: {
-        tableNumber,
-        restaurantId,
-        qrCodeUrl: "", // We can generate this later or immediately
-      },
+    const docRef = await db.collection("tables").add({
+      restaurantId,
+      tableNumber,
+      status: "free",
+      createdAt: new Date().toISOString()
     });
 
-    return NextResponse.json({ table: newTable });
+    const newTable = { id: docRef.id, restaurantId, tableNumber, status: "free" };
+    return NextResponse.json({ success: true, table: newTable });
   } catch (error) {
     return NextResponse.json({ error: "Failed to create table" }, { status: 500 });
   }

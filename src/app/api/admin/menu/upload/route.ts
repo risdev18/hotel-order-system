@@ -1,112 +1,96 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/genai";
+import { db } from "@/lib/firebase-admin";
 
-const prisma = new PrismaClient();
-
-// Ensure the user sets GEMINI_API_KEY in their .env
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "dummy" });
+const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
-  let restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl?.searchParams?.get("restaurantId");
-  if (!restaurantId) return NextResponse.json({error: "Missing restaurantId"}, {status:400});
-
   try {
+    const restaurantId = req.headers.get("x-restaurant-id");
+    if (!restaurantId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const formData = await req.formData();
     const file = formData.get("menuImage") as File;
-
+    
     if (!file) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
 
-    // Convert file to base64
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const base64Data = buffer.toString("base64");
+    const bytes = await file.arrayBuffer();
+    const base64Data = Buffer.from(bytes).toString("base64");
 
     const prompt = `
-      Extract the menu items from this restaurant menu image.
-      Return the data strictly as a JSON array of objects.
+      Extract the menu items from this image. 
+      Return a pure JSON array of objects.
       Each object should have:
-      - "name": String, the name of the dish
-      - "price": Number, the price of the dish
-      - "categoryName": String, the section it belongs to (e.g. Starters, Main Course, Breads, Beverages, etc.)
-      - "vegFlag": Boolean, true if it's vegetarian, false if it's non-vegetarian (meat/egg/chicken/mutton/fish)
-      - "description": String, short description of the dish if present, else empty string.
+      - categoryName (string, e.g. "Starters", "Mains")
+      - name (string, the name of the dish)
+      - price (number, just the number)
+      - vegFlag (boolean, true if vegetarian, false if non-veg. Infer if possible, default to true)
       
-      Output ONLY valid JSON.
+      CRITICAL: Return ONLY the JSON array. Do not include markdown formatting like \`\`\`json. Just the raw array starting with [ and ending with ].
     `;
 
-    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === "dummy") {
-      return NextResponse.json({ error: "Please add your GEMINI_API_KEY to the .env file in the hotel directory to enable Real AI parsing." }, { status: 400 });
-    }
-    
-    let response = null;
-    let retries = 3;
-    let delay = 15000;
-    
-    while (retries > 0) {
-      try {
-        response = await ai.models.generateContent({
-          model: "gemini-3.8-flash",
-          contents: [
-            { role: "user", parts: [{ text: prompt }, { inlineData: { mimeType: file.type, data: base64Data } }] }
-          ],
-          config: {
-            responseMimeType: "application/json",
-          }
-        });
-        break; // Success, exit loop
-      } catch (err: any) {
-        const errorMsg = err.message || "";
-        // Check for 503 Overload or 429 Quota Exceeded
-        if ((errorMsg.includes("503") || errorMsg.includes("429") || errorMsg.includes("RESOURCE_EXHAUSTED")) && retries > 1) {
-          console.log(`API limit reached. Waiting for quota to reset in ${delay/1000}s...`);
-          await new Promise(r => setTimeout(r, delay));
-          retries--;
-          delay *= 1.5; // Exponential backoff (e.g. 15s -> 22s -> 33s)
-        } else {
-          throw err;
+    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: base64Data,
+          mimeType: file.type
         }
       }
+    ]);
+
+    let text = result.response.text();
+    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    
+    const items = JSON.parse(text);
+    
+    if (!Array.isArray(items)) {
+      throw new Error("AI did not return an array");
     }
 
-    if (!response || !response.text) {
-      throw new Error("No response from AI after retries");
-    }
-    let parsedItems = JSON.parse(response.text);
+    const batch = db.batch();
+    const categoriesMap = new Map<string, string>();
+    const categorySnapshot = await db.collection("menuCategories").where("restaurantId", "==", restaurantId).get();
+    
+    categorySnapshot.docs.forEach(doc => {
+      categoriesMap.set(doc.data().name.toLowerCase(), doc.id);
+    });
 
-    // Save to database
-    // Group into categories
-    let insertedCount = 0;
-    for (const item of parsedItems) {
+    for (const item of items) {
       if (!item.name || !item.price || !item.categoryName) continue;
+      const catKey = item.categoryName.toLowerCase();
       
-      // Find or create category
-      let category = await prisma.menuCategory.findFirst({ where: { name: item.categoryName, restaurantId } });
-      if (!category) {
-        const lastCat = await prisma.menuCategory.findFirst({ where: { restaurantId }, orderBy: { sortOrder: 'desc' } });
-        category = await prisma.menuCategory.create({
-          data: { name: item.categoryName, sortOrder: (lastCat?.sortOrder || 0) + 1, restaurantId }
+      let categoryId = categoriesMap.get(catKey);
+      if (!categoryId) {
+        const catRef = db.collection("menuCategories").doc();
+        batch.set(catRef, {
+          name: item.categoryName,
+          restaurantId,
+          sortOrder: 0
         });
+        categoryId = catRef.id;
+        categoriesMap.set(catKey, categoryId);
       }
 
-      // Create item
-      await prisma.menuItem.create({
-        data: {
-          name: item.name,
-          price: Number(item.price),
-          categoryId: category.id,
-          vegFlag: item.vegFlag !== undefined ? item.vegFlag : true,
-          description: item.description || "",
-          imageUrl: `https://via.placeholder.com/150?text=${encodeURIComponent(item.name.substring(0, 10))}`
-        }
+      const itemRef = db.collection("menuItems").doc();
+      batch.set(itemRef, {
+        name: item.name,
+        price: parseFloat(item.price.toString()),
+        vegFlag: item.vegFlag ?? true,
+        categoryId,
+        isAvailable: true,
+        restaurantId
       });
-      insertedCount++;
     }
 
-    return NextResponse.json({ message: "Menu processed successfully", itemsInserted: insertedCount, parsedData: parsedItems });
+    await batch.commit();
+
+    return NextResponse.json({ success: true, itemsInserted: items.length });
   } catch (error: any) {
-    console.error("AI Upload error", error);
-    return NextResponse.json({ error: error.message || "Failed to process menu image" }, { status: 500 });
+    console.error("AI Upload Error:", error);
+    return NextResponse.json({ error: error.message || "Failed to process image" }, { status: 500 });
   }
 }

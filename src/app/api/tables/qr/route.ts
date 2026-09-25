@@ -1,44 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import QRCode from "qrcode";
+import { db } from "@/lib/firebase-admin";
 
-const prisma = new PrismaClient();
-
-export async function POST(req: NextRequest) {
-  let restaurantId = req.headers.get("x-restaurant-id") || req.nextUrl?.searchParams?.get("restaurantId");
-  // Also allow body to have restaurantId
-
+export async function PUT(req: NextRequest) {
   try {
-    const { tableId, hostUrl } = await req.json();
+    const restaurantId = req.headers.get("x-restaurant-id");
+    if (!restaurantId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    if (!tableId || !hostUrl) {
-      return NextResponse.json({ error: "Table ID and Host URL are required" }, { status: 400 });
-    }
+    const { tableId, qrCodeUrl } = await req.json();
 
-    const table = await prisma.table.findUnique({ where: { id: tableId } });
-    if (!table) {
-      return NextResponse.json({ error: "Table not found" }, { status: 404 });
-    }
-
-    const restaurant = await prisma.restaurant.findUnique({ where: { id: restaurantId! } });
-    const orderUrl = `${hostUrl}/order/${restaurant!.slug}/${table.tableNumber}`;
-    const qrDataUrl = await QRCode.toDataURL(orderUrl, {
-      width: 400,
-      margin: 2,
-      color: {
-        dark: "#b91c1c", // Dark red theme for dhaba
-        light: "#ffffff",
-      },
+    await db.collection("tables").doc(tableId).update({
+      qrCodeUrl
     });
 
-    const updatedTable = await prisma.table.update({
-      where: { id: tableId },
-      data: { qrCodeUrl: qrDataUrl },
-    });
-
-    return NextResponse.json({ table: updatedTable, qrCodeUrl: qrDataUrl, orderUrl });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to generate QR code", error);
-    return NextResponse.json({ error: "Failed to generate QR code" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update QR code" }, { status: 500 });
   }
 }
