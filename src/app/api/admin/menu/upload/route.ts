@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { GoogleGenAI } from "@google/genai";
+import Groq from "groq-sdk";
 
 const prisma = new PrismaClient();
-
-// Ensure the user sets GEMINI_API_KEY in their .env
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "dummy" });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "dummy" });
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,58 +17,67 @@ export async function POST(req: NextRequest) {
     // Convert file to base64
     const buffer = Buffer.from(await file.arrayBuffer());
     const base64Data = buffer.toString("base64");
+    const mimeType = file.type || "image/jpeg";
 
     const prompt = `
       Extract the menu items from this restaurant menu image.
-      Return the data strictly as a JSON array of objects.
+      Return the data strictly as a JSON array of objects, with no markdown formatting, no backticks, just the raw JSON array starting with [ and ending with ].
       Each object should have:
       - "name": String, the name of the dish
       - "price": Number, the price of the dish
       - "categoryName": String, the section it belongs to (e.g. Starters, Main Course, Breads, Beverages, etc.)
       - "vegFlag": Boolean, true if it's vegetarian, false if it's non-vegetarian (meat/egg/chicken/mutton/fish)
       - "description": String, short description of the dish if present, else empty string.
-      
-      Output ONLY valid JSON.
     `;
 
-    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === "dummy") {
-      return NextResponse.json({ error: "Please add your GEMINI_API_KEY to the .env file in the hotel directory to enable Real AI parsing." }, { status: 400 });
+    if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY === "dummy") {
+      return NextResponse.json({ error: "Please add your GROQ_API_KEY to the .env file." }, { status: 400 });
     }
     
     let response = null;
     let retries = 3;
-    let delay = 15000;
+    let delay = 2000;
     
     while (retries > 0) {
       try {
-        response = await ai.models.generateContent({
-          model: "gemini-3.8-flash",
-          contents: [
-            { role: "user", parts: [{ text: prompt }, { inlineData: { mimeType: file.type, data: base64Data } }] }
+        response = await groq.chat.completions.create({
+          model: "llama-3.2-90b-vision-preview",
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: prompt },
+                { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64Data}` } }
+              ]
+            }
           ],
-          config: {
-            responseMimeType: "application/json",
-          }
+          temperature: 0.1,
         });
         break; // Success, exit loop
       } catch (err: any) {
         const errorMsg = err.message || "";
-        // Check for 503 Overload or 429 Quota Exceeded
-        if ((errorMsg.includes("503") || errorMsg.includes("429") || errorMsg.includes("RESOURCE_EXHAUSTED")) && retries > 1) {
-          console.log(`API limit reached. Waiting for quota to reset in ${delay/1000}s...`);
+        if ((errorMsg.includes("429") || errorMsg.includes("503")) && retries > 1) {
+          console.log(`Groq API limit reached. Retrying in ${delay/1000}s...`);
           await new Promise(r => setTimeout(r, delay));
           retries--;
-          delay *= 1.5; // Exponential backoff (e.g. 15s -> 22s -> 33s)
+          delay *= 1.5;
         } else {
           throw err;
         }
       }
     }
 
-    if (!response || !response.text) {
-      throw new Error("No response from AI after retries");
+    if (!response || !response.choices[0]?.message?.content) {
+      throw new Error("No response from Groq AI");
     }
-    let parsedItems = JSON.parse(response.text);
+    
+    let rawContent = response.choices[0].message.content.trim();
+    // Clean up potential markdown code blocks (e.g. ```json ... ```)
+    if (rawContent.startsWith("```")) {
+      rawContent = rawContent.replace(/^```(json)?\n?/, '').replace(/\n?```$/, '');
+    }
+    
+    let parsedItems = JSON.parse(rawContent);
 
     // Save to database
     // Group into categories
