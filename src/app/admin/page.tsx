@@ -352,6 +352,7 @@ function MenuManagementTab() {
 // ==========================================
 function TablesManagementTab() {
   const [tables, setTables] = useState<any[]>([]);
+  const [settings, setSettings] = useState({ name: "The Royal Dhaba", logoUrl: "" });
   const [isGenerating, setIsGenerating] = useState(false);
 
   const fetchTables = async () => {
@@ -364,8 +365,17 @@ function TablesManagementTab() {
     }
   };
 
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch("/api/admin/settings");
+      const data = await res.json();
+      if (data.settings) setSettings(data.settings);
+    } catch (e) {}
+  };
+
   useEffect(() => {
     fetchTables();
+    fetchSettings();
   }, []);
 
   const generateAllQRs = async () => {
@@ -429,9 +439,12 @@ function TablesManagementTab() {
               </div>
             )}
             
-            <div className="mt-4 pt-4 border-t border-dashed border-neutral-200 w-full text-center print:border-black print:border-t-2">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-orange-500 print:text-black">
-                The Royal Dhaba
+            <div className="mt-4 pt-4 border-t border-dashed border-neutral-200 w-full flex flex-col items-center justify-center print:border-black print:border-t-2">
+              {settings.logoUrl && (
+                <img src={settings.logoUrl} alt="Logo" className="h-6 object-contain mb-1" />
+              )}
+              <span className="text-[10px] uppercase font-bold tracking-wider text-orange-500 print:text-black text-center">
+                {settings.name}
               </span>
             </div>
           </div>
@@ -447,6 +460,7 @@ function TablesManagementTab() {
 function BillingTab() {
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [settings, setSettings] = useState({ name: "The Royal Dhaba", logoUrl: "" });
 
   const fetchOrders = async () => {
     try {
@@ -459,8 +473,17 @@ function BillingTab() {
     }
   };
 
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch("/api/admin/settings");
+      const data = await res.json();
+      if (data.settings) setSettings(data.settings);
+    } catch (e) {}
+  };
+
   useEffect(() => {
     fetchOrders();
+    fetchSettings();
   }, []);
 
   const handlePay = async (method: string) => {
@@ -516,9 +539,12 @@ function BillingTab() {
       {/* Selected Order Bill View */}
       {selectedOrder && (
         <div className="flex-[1.5] bg-white rounded-2xl border border-neutral-200 shadow-xl p-8 print:shadow-none print:border-black print:border-2">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-black text-neutral-900 tracking-tight">THE ROYAL DHABA</h2>
-            <p className="text-neutral-500 text-sm">Table {selectedOrder.table.tableNumber} Receipt</p>
+          <div className="text-center mb-8 flex flex-col items-center">
+            {settings.logoUrl && (
+              <img src={settings.logoUrl} alt="Logo" className="h-16 object-contain mb-3" />
+            )}
+            <h2 className="text-3xl font-black text-neutral-900 tracking-tight uppercase">{settings.name}</h2>
+            <p className="text-neutral-500 text-sm mt-1">Table {selectedOrder.table.tableNumber} Receipt</p>
           </div>
 
           <div className="space-y-4 mb-8">
