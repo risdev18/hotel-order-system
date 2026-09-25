@@ -9,15 +9,17 @@ function initDb() {
       // Try normal JSON parse first
       credentialConfig = cert(JSON.parse(serviceAccountStr || '{}'));
     } catch (e) {
-      // Fallback: extract manually if Vercel mangled the JSON
-      const str = serviceAccountStr || '';
-      const projectId = (str.match(/"project_id"\s*:\s*"([^"]+)"/) || [])[1];
-      const clientEmail = (str.match(/"client_email"\s*:\s*"([^"]+)"/) || [])[1];
-      const privateKey = (str.match(/"private_key"\s*:\s*"([^"]+)"/) || [])[1];
+      // Fallback: extract manually or use hardcoded IDs
+      const str = serviceAccountStr || process.env.FIREBASE_PRIVATE_KEY || '';
+      
+      let privateKey = (str.match(/"private_key"\s*:\s*"([^"]+)"/) || [])[1];
+      if (!privateKey && str.includes('-----BEGIN PRIVATE KEY-----')) {
+        privateKey = str;
+      }
       
       credentialConfig = cert({
-        projectId: projectId || process.env.FIREBASE_PROJECT_ID,
-        clientEmail: clientEmail || process.env.FIREBASE_CLIENT_EMAIL,
+        projectId: 'hotel-f469e',
+        clientEmail: 'firebase-adminsdk-fbsvc@hotel-f469e.iam.gserviceaccount.com',
         privateKey: (privateKey || process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
       });
     }
