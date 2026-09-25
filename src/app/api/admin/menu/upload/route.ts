@@ -54,11 +54,13 @@ export async function POST(req: NextRequest) {
         });
         break; // Success, exit loop
       } catch (err: any) {
-        if (err.message && err.message.includes("503") && retries > 1) {
-          console.log(`API overloaded (503). Retrying in ${delay}ms...`);
+        const errorMsg = err.message || "";
+        // Check for 503 Overload or 429 Quota Exceeded
+        if ((errorMsg.includes("503") || errorMsg.includes("429") || errorMsg.includes("RESOURCE_EXHAUSTED")) && retries > 1) {
+          console.log(`API limit reached (503/429). Retrying in ${delay}ms...`);
           await new Promise(r => setTimeout(r, delay));
           retries--;
-          delay *= 2; // Exponential backoff
+          delay *= 2; // Exponential backoff (e.g. 1s -> 2s -> 4s)
         } else {
           throw err;
         }
