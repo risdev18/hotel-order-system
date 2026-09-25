@@ -259,6 +259,11 @@ function MenuManagementTab({ restaurantId }: { restaurantId: string }) {
   const [categories, setCategories] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState("");
+  
+  // Manual form state
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [newItem, setNewItem] = useState({ name: "", price: "", categoryName: "", vegFlag: true });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchMenu = async () => {
     try {
@@ -307,6 +312,34 @@ function MenuManagementTab({ restaurantId }: { restaurantId: string }) {
     }
   };
 
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setUploadResult("");
+    
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
+        body: JSON.stringify(newItem)
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        setUploadResult(`Manually added "${newItem.name}" successfully!`);
+        setNewItem({ name: "", price: "", categoryName: "", vegFlag: true }); // reset
+        setShowManualForm(false);
+        fetchMenu();
+      } else {
+        setUploadResult(`Error: ${data.error}`);
+      }
+    } catch (error: any) {
+      setUploadResult(`Failed to add item: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
@@ -315,25 +348,33 @@ function MenuManagementTab({ restaurantId }: { restaurantId: string }) {
           <p className="text-neutral-500 mt-2">Manage your restaurant offerings</p>
         </div>
         
-        <div className="bg-orange-50 border border-orange-200 p-4 rounded-2xl flex items-center gap-4 w-full md:w-auto">
-          <div>
-            <h3 className="font-bold text-orange-900 flex items-center gap-2">
-              <Sparkles size={18} className="text-orange-500" />
-              Auto-Create from Photo
-            </h3>
-            <p className="text-sm text-orange-700">Upload your physical menu card</p>
+        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+          <button 
+            onClick={() => setShowManualForm(!showManualForm)}
+            className="bg-white border border-neutral-200 text-neutral-700 px-6 py-3 rounded-xl font-medium hover:bg-neutral-50 transition-colors shadow-sm whitespace-nowrap h-full"
+          >
+            {showManualForm ? "Cancel Manual Add" : "+ Add Manually"}
+          </button>
+
+          <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl flex items-center gap-4">
+            <div>
+              <h3 className="font-bold text-orange-900 flex items-center gap-2">
+                <Sparkles size={18} className="text-orange-500" />
+                AI Photo Upload
+              </h3>
+            </div>
+            <label className="relative cursor-pointer bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
+              {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+              <span>{isUploading ? "Scanning..." : "Upload"}</span>
+              <input 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                onChange={handleFileUpload}
+                disabled={isUploading}
+              />
+            </label>
           </div>
-          <label className="relative cursor-pointer bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
-            {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-            <span>{isUploading ? "Scanning..." : "Upload"}</span>
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              onChange={handleFileUpload}
-              disabled={isUploading}
-            />
-          </label>
         </div>
       </div>
 
@@ -343,7 +384,40 @@ function MenuManagementTab({ restaurantId }: { restaurantId: string }) {
         </div>
       )}
 
+      {showManualForm && (
+        <form onSubmit={handleManualSubmit} className="bg-white rounded-2xl p-6 border border-neutral-200 shadow-sm mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+          <div className="lg:col-span-1">
+            <label className="block text-sm font-bold text-neutral-700 mb-1">Category</label>
+            <input type="text" required placeholder="e.g. Starters" value={newItem.categoryName} onChange={e => setNewItem({...newItem, categoryName: e.target.value})} className="w-full bg-neutral-50 border rounded-xl px-4 py-2" />
+          </div>
+          <div className="lg:col-span-1">
+            <label className="block text-sm font-bold text-neutral-700 mb-1">Item Name</label>
+            <input type="text" required placeholder="e.g. Paneer Tikka" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} className="w-full bg-neutral-50 border rounded-xl px-4 py-2" />
+          </div>
+          <div className="lg:col-span-1">
+            <label className="block text-sm font-bold text-neutral-700 mb-1">Price (₹)</label>
+            <input type="number" required placeholder="250" value={newItem.price} onChange={e => setNewItem({...newItem, price: e.target.value})} className="w-full bg-neutral-50 border rounded-xl px-4 py-2" />
+          </div>
+          <div className="lg:col-span-1 flex items-center h-[42px] px-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={newItem.vegFlag} onChange={e => setNewItem({...newItem, vegFlag: e.target.checked})} className="w-5 h-5 accent-green-600" />
+              <span className="font-bold text-neutral-700">Veg</span>
+            </label>
+          </div>
+          <div className="lg:col-span-1">
+            <button type="submit" disabled={isSubmitting} className="w-full bg-neutral-900 text-white font-bold py-2.5 rounded-xl hover:bg-neutral-800 h-[42px]">
+              {isSubmitting ? "Adding..." : "Add Item"}
+            </button>
+          </div>
+        </form>
+      )}
+
       <div className="space-y-8">
+        {categories.length === 0 && !showManualForm && (
+           <div className="py-12 text-center text-neutral-400 font-medium border-2 border-dashed rounded-2xl">
+              No items on the menu yet. Upload a photo or add manually!
+           </div>
+        )}
         {categories.map(cat => (
           <div key={cat.id} className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-200">
             <h2 className="text-xl font-bold mb-4 flex items-center justify-between border-b pb-2 text-neutral-900">
