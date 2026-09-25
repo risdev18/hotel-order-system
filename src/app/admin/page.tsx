@@ -509,7 +509,7 @@ function BillingTab() {
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
       {/* List of Unpaid Orders */}
-      <div className="flex-1 space-y-4">
+      <div className="flex-1 space-y-4 print:hidden">
         <h1 className="text-3xl font-bold text-neutral-900 mb-6">Pending Bills</h1>
         {orders.length === 0 && <p className="text-neutral-500">No pending bills.</p>}
         {orders.map(order => (
