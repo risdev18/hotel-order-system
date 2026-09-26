@@ -676,6 +676,30 @@ function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
     }
   };
 
+  const handleBulkAddTables = async () => {
+    const countStr = prompt("How many new tables do you want to bulk generate? (e.g. 50):");
+    const count = parseInt(countStr || "0");
+    if (!count || isNaN(count) || count <= 0) return;
+    
+    setIsGenerating(true);
+    try {
+      const res = await fetch("/api/tables/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
+        body: JSON.stringify({ count })
+      });
+      if (res.ok) {
+        fetchTables();
+      } else {
+        alert("Failed to bulk generate tables");
+      }
+    } catch (e) {
+      alert("Error generating tables");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto print:p-0 print:max-w-none print:w-full">
       <div className="flex justify-between items-end mb-8 print:hidden">
@@ -683,7 +707,7 @@ function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
           <h1 className="text-3xl font-bold text-neutral-900">Tables & QR Codes</h1>
           <p className="text-neutral-500 mt-2">Manage seating and print QR codes</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4 justify-end">
           <button 
             onClick={generateAllQRs}
             disabled={isGenerating}
@@ -694,9 +718,17 @@ function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
           </button>
           <button 
             onClick={handleAddTable}
+            disabled={isGenerating}
             className="bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-xl font-medium flex items-center gap-2 hover:bg-neutral-50 transition-colors"
           >
-            + Add Table
+            + Add 1 Table
+          </button>
+          <button 
+            onClick={handleBulkAddTables}
+            disabled={isGenerating}
+            className="bg-orange-100 border border-orange-200 text-orange-700 px-4 py-2 rounded-xl font-medium flex items-center gap-2 hover:bg-orange-200 transition-colors"
+          >
+            + Bulk Generate
           </button>
           <button 
             onClick={() => window.print()}
@@ -711,7 +743,7 @@ function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
       {tables.length === 0 && (
         <div className="py-20 flex flex-col items-center justify-center text-neutral-400 bg-white rounded-3xl border border-neutral-200 shadow-sm print:hidden">
           <p className="text-xl font-medium mb-4">No tables found</p>
-          <button onClick={handleAddTable} className="bg-orange-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-orange-700">Add First Table</button>
+          <button onClick={handleBulkAddTables} className="bg-orange-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-orange-700">Auto-Generate Tables</button>
         </div>
       )}
 
