@@ -44,7 +44,7 @@ export default function CustomerMenu({ tableId, tableNumber, categories, restaur
       <header className="sticky top-0 z-40 bg-neutral-950/80 backdrop-blur-xl border-b border-white/10 px-4 py-4">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-orange-500 flex items-center gap-2">
               <UtensilsCrossed size={24} className="text-orange-500" /> 
               The Royal Dhaba
             </h1>
@@ -52,7 +52,7 @@ export default function CustomerMenu({ tableId, tableNumber, categories, restaur
           </div>
           <button 
             onClick={handleCallWaiter}
-            className="p-2 rounded-full bg-neutral-800 text-orange-400 hover:bg-neutral-700 transition-colors"
+            className="p-2 rounded-xl bg-neutral-800 text-orange-400 hover:bg-neutral-700 transition-colors"
           >
             <BellRing size={20} />
           </button>
@@ -101,9 +101,9 @@ export default function CustomerMenu({ tableId, tableNumber, categories, restaur
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
               className={cn(
-                "whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all duration-300",
+                "whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300",
                 activeCategory === cat.id 
-                  ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.4)]" 
+                  ? "bg-orange-600 text-white shadow-[0_0_15px_rgba(249,115,22,0.4)]" 
                   : "bg-neutral-900 text-neutral-400 hover:text-white"
               )}
             >
@@ -195,7 +195,7 @@ export default function CustomerMenu({ tableId, tableNumber, categories, restaur
           >
             <button 
               onClick={() => setIsCartOpen(true)}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-600 p-4 rounded-2xl shadow-[0_10px_25px_rgba(249,115,22,0.4)] flex justify-between items-center text-white font-bold"
+              className="w-full bg-orange-600 p-4 rounded-xl shadow-[0_10px_25px_rgba(249,115,22,0.4)] flex justify-between items-center text-white font-bold"
             >
               <div className="flex flex-col text-left">
                 <span className="text-xs font-medium text-white/80">{cart.items.reduce((acc, i) => acc + i.quantity, 0)} Items</span>
@@ -282,7 +282,7 @@ export default function CustomerMenu({ tableId, tableNumber, categories, restaur
                 </button>
                 <button 
                   onClick={handlePlaceOrder}
-                  className="flex-[2] py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
+                  className="flex-[2] py-4 rounded-xl bg-orange-600 text-white font-bold shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
                 >
                   Place Order
                 </button>

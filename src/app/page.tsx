@@ -30,7 +30,7 @@ export default function Home() {
             </Link>
             <Link 
               href="/admin" 
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#cda661]/10 border border-[#cda661]/20 hover:bg-[#cda661]/20 hover:border-[#cda661]/40 transition-all text-sm font-semibold text-[#cda661]"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#cda661]/10 border border-[#cda661]/20 hover:bg-[#cda661]/20 hover:border-[#cda661]/40 transition-all text-sm font-semibold text-[#cda661]"
             >
               <ChefHat size={16} />
               Restaurant Admin
@@ -41,7 +41,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pt-32 pb-24 text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#cda661]/10 border border-[#cda661]/20 text-[#cda661] font-medium text-sm mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#cda661]/10 border border-[#cda661]/20 text-[#cda661] font-medium text-sm mb-8">
           <SparklesIcon className="w-4 h-4" /> Smart Restaurant System
         </div>
         
@@ -79,7 +79,7 @@ export default function Home() {
       </div>
 
       {/* Features Grid */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-32">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <FeatureCard 
             title="Scan & Order" 
@@ -90,11 +90,21 @@ export default function Home() {
             description="Chefs get a real-time updating dashboard of incoming orders color-coded by urgency."
           />
           <FeatureCard 
-            title="AI Menu Upload" 
-            description="Take a photo of your physical menu card and our AI instantly digitizes it into the database."
+            title="Menu Digitization" 
+            description="Take a photo of your physical menu card and our system instantly digitizes it into the database."
           />
         </div>
       </div>
+
+      <footer className="relative z-10 border-t border-white/5 py-8 mt-12 bg-black/40">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-[#888888]">
+          <p>&copy; {new Date().getFullYear()} The Royal Dhaba. All rights reserved.</p>
+          <div className="flex gap-6">
+            <Link href="/privacy" className="hover:text-[#cda661] transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-[#cda661] transition-colors">Terms & Conditions</Link>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }

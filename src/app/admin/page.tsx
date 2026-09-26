@@ -43,7 +43,7 @@ export default function UnifiedAdminDashboard() {
       <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4">
         <form onSubmit={handleLogin} className="bg-neutral-900 p-8 rounded-3xl w-full max-w-sm border border-neutral-800 shadow-2xl">
           <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 bg-orange-500/10 text-orange-500 rounded-md flex items-center justify-center">
               <Lock size={32} />
             </div>
           </div>
@@ -67,7 +67,7 @@ export default function UnifiedAdminDashboard() {
           />
           <button 
             type="submit"
-            className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold py-3 rounded-xl hover:opacity-90 active:scale-[0.98] transition-all"
+            className="w-full bg-orange-600 text-white font-bold py-3 rounded-xl hover:opacity-90 active:scale-[0.98] transition-all"
           >
             Unlock Dashboard
           </button>
@@ -81,7 +81,7 @@ export default function UnifiedAdminDashboard() {
       {/* Sidebar Navigation */}
       <aside className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-neutral-200 flex flex-col print:hidden shrink-0">
         <div className="p-6 border-b border-neutral-200">
-          <h2 className="text-xl font-bold bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
+          <h2 className="text-xl font-bold text-orange-600">
             Admin Panel
           </h2>
         </div>
@@ -172,7 +172,7 @@ function LiveOrdersTab({ restaurantId }: { restaurantId: string }) {
   };
 
   if (isLoading) {
-    return <div className="p-8 flex justify-center"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" /></div>;
+    return <div className="p-8 flex justify-center"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-md animate-spin" /></div>;
   }
 
   return (
@@ -196,7 +196,7 @@ function LiveOrdersTab({ restaurantId }: { restaurantId: string }) {
                     {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
-                <div className={cn("px-3 py-1 rounded-full text-xs font-bold uppercase",
+                <div className={cn("px-3 py-1 rounded-md text-xs font-bold uppercase",
                   isPending ? "bg-red-100 text-red-700" : isPreparing ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"
                 )}>
                   {order.status}
@@ -557,7 +557,7 @@ function MenuManagementTab({ restaurantId }: { restaurantId: string }) {
           <div key={cat.id} className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-200">
             <h2 className="text-xl font-bold mb-4 flex items-center justify-between border-b pb-2 text-neutral-900">
               {cat.name}
-              <span className="text-sm font-normal text-neutral-500 bg-neutral-100 px-3 py-1 rounded-full">{cat.items.length} Items</span>
+              <span className="text-sm font-normal text-neutral-500 bg-neutral-100 px-3 py-1 rounded-md">{cat.items.length} Items</span>
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {cat.items.map((item: any) => (
@@ -565,7 +565,7 @@ function MenuManagementTab({ restaurantId }: { restaurantId: string }) {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <div className={`w-3 h-3 border rounded-sm flex items-center justify-center shrink-0 ${item.vegFlag ? "border-green-500" : "border-red-500"}`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${item.vegFlag ? "bg-green-500" : "bg-red-500"}`} />
+                        <div className={`w-1.5 h-1.5 rounded-md ${item.vegFlag ? "bg-green-500" : "bg-red-500"}`} />
                       </div>
                       <h4 className="font-bold text-neutral-800">{item.name}</h4>
                     </div>
@@ -769,7 +769,7 @@ function BillingTab({ restaurantId }: { restaurantId: string }) {
               </div>
               <div className="text-right">
                 <p className="text-xl font-bold text-orange-600">₹{calculateSubtotal(order)}</p>
-                <div className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-bold rounded-full mt-1 uppercase inline-block">
+                <div className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-bold rounded-md mt-1 uppercase inline-block">
                   {order.status}
                 </div>
               </div>
@@ -889,7 +889,7 @@ function SettingsTab({ restaurantId }: { restaurantId: string }) {
     }
   };
 
-  if (isLoading) return <div className="p-8 flex justify-center"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" /></div>;
+  if (isLoading) return <div className="p-8 flex justify-center"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-md animate-spin" /></div>;
 
   return (
     <div className="p-4 md:p-8 max-w-3xl mx-auto">

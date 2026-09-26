@@ -60,14 +60,14 @@ export default function SuperAdminDashboard() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <form onSubmit={handleLogin} className="bg-neutral-900 p-8 rounded-3xl w-full max-w-sm border border-neutral-800">
-          <div className="flex justify-center mb-6 text-purple-500"><KeyRound size={48} /></div>
+          <div className="flex justify-center mb-6 text-blue-500"><KeyRound size={48} /></div>
           <h2 className="text-2xl font-bold text-white text-center mb-6">Super Admin Login</h2>
           <input 
             type="password" value={password} onChange={(e) => setPassword(e.target.value)}
             placeholder="Master Password"
             className="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-white mb-4" autoFocus
           />
-          <button type="submit" className="w-full bg-purple-600 text-white font-bold py-3 rounded-xl hover:bg-purple-700">Unlock Master Panel</button>
+          <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700">Unlock Master Panel</button>
         </form>
       </div>
     );
@@ -79,7 +79,7 @@ export default function SuperAdminDashboard() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-black text-neutral-900 flex items-center gap-3">
-              <Building2 className="text-purple-600" /> SmartHotel Master Control
+              <Building2 className="text-blue-600" /> SmartHotel Master Control
             </h1>
             <p className="text-neutral-500 mt-2">Manage your SaaS clients and onboard new restaurants.</p>
           </div>
@@ -92,16 +92,16 @@ export default function SuperAdminDashboard() {
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
                 <label className="block text-sm font-bold text-neutral-700 mb-1">Restaurant Name</label>
-                <input type="text" required value={newRestaurant.name} onChange={e => setNewRestaurant({...newRestaurant, name: e.target.value})} className="w-full bg-neutral-50 border rounded-xl px-4 py-3 text-neutral-900 focus:outline-none focus:border-purple-500" placeholder="e.g. Sagar Ratna" />
+                <input type="text" required value={newRestaurant.name} onChange={e => setNewRestaurant({...newRestaurant, name: e.target.value})} className="w-full bg-neutral-50 border rounded-xl px-4 py-3 text-neutral-900 focus:outline-none focus:border-blue-500" placeholder="e.g. Sagar Ratna" />
               </div>
               <div>
                 <label className="block text-sm font-bold text-neutral-700 mb-1">URL Slug</label>
-                <input type="text" required value={newRestaurant.slug} onChange={e => setNewRestaurant({...newRestaurant, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-')})} className="w-full bg-neutral-50 border rounded-xl px-4 py-3 text-neutral-900 focus:outline-none focus:border-purple-500" placeholder="e.g. sagar-ratna" />
+                <input type="text" required value={newRestaurant.slug} onChange={e => setNewRestaurant({...newRestaurant, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-')})} className="w-full bg-neutral-50 border rounded-xl px-4 py-3 text-neutral-900 focus:outline-none focus:border-blue-500" placeholder="e.g. sagar-ratna" />
                 <p className="text-xs text-neutral-400 mt-1">Customers will visit smarthotel.com/order/<b>{newRestaurant.slug || "slug"}</b></p>
               </div>
               <div>
                 <label className="block text-sm font-bold text-neutral-700 mb-1">Admin Password</label>
-                <input type="text" required value={newRestaurant.password} onChange={e => setNewRestaurant({...newRestaurant, password: e.target.value})} className="w-full bg-neutral-50 border rounded-xl px-4 py-3 text-neutral-900 focus:outline-none focus:border-purple-500" placeholder="Give this to the owner" />
+                <input type="text" required value={newRestaurant.password} onChange={e => setNewRestaurant({...newRestaurant, password: e.target.value})} className="w-full bg-neutral-50 border rounded-xl px-4 py-3 text-neutral-900 focus:outline-none focus:border-blue-500" placeholder="Give this to the owner" />
               </div>
               <button type="submit" disabled={isCreating} className="w-full bg-neutral-900 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-neutral-800">
                 <Plus size={18} /> {isCreating ? "Creating..." : "Create Restaurant Database"}
