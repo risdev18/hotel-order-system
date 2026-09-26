@@ -38,14 +38,23 @@ export async function POST(req: NextRequest) {
       createdAt: new Date().toISOString()
     });
 
-    // Auto-provision tables
+    // Auto-provision tables with QR codes
     const batch = db.batch();
+    // Default host URL - in production, this should ideally be passed in or read from env.
+    const hostUrl = req.headers.get("origin") || "http://localhost:3000";
+
     for (let i = 1; i <= finalTableCount; i++) {
       const tableRef = db.collection("tables").doc();
+      const tableNumberStr = `T${i.toString().padStart(2, '0')}`;
+      
+      const orderUrl = `${hostUrl}/order/${slug}/${tableRef.id}`;
+      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(orderUrl)}`;
+
       batch.set(tableRef, {
         restaurantId: docRef.id,
-        tableNumber: `T${i.toString().padStart(2, '0')}`,
+        tableNumber: tableNumberStr,
         status: "free",
+        qrCodeUrl,
         createdAt: new Date().toISOString()
       });
     }

@@ -6,8 +6,13 @@ export async function POST(req: NextRequest) {
   if (!restaurantId) return NextResponse.json({ error: "Missing restaurantId" }, { status: 400 });
 
   try {
-    const { count } = await req.json();
-    if (!count || count <= 0) return NextResponse.json({ error: "Invalid count" }, { status: 400 });
+    const { count, hostUrl } = await req.json();
+    if (!count || count <= 0 || !hostUrl) return NextResponse.json({ error: "Invalid count or missing hostUrl" }, { status: 400 });
+
+    // Fetch restaurant slug
+    const restDoc = await db.collection("restaurants").doc(restaurantId).get();
+    if (!restDoc.exists) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
+    const slug = restDoc.data()?.slug;
 
     // Find highest existing table number
     const existing = await db.collection("tables")
@@ -28,10 +33,16 @@ export async function POST(req: NextRequest) {
     for (let i = 1; i <= count; i++) {
       const nextNum = maxTableNum + i;
       const tableRef = db.collection("tables").doc();
+      const tableNumberStr = `T${nextNum.toString().padStart(2, '0')}`;
+      
+      const orderUrl = `${hostUrl}/order/${slug}/${tableRef.id}`;
+      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(orderUrl)}`;
+
       batch.set(tableRef, {
         restaurantId,
-        tableNumber: `T${nextNum.toString().padStart(2, '0')}`,
+        tableNumber: tableNumberStr,
         status: "free",
+        qrCodeUrl,
         createdAt: new Date().toISOString()
       });
     }

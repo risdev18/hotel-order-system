@@ -614,7 +614,11 @@ function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
         headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId } 
       });
       const data = await res.json();
-      setTables(data.tables || []);
+      const sortedTables = (data.tables || []).sort((a: any, b: any) => {
+        // Natural sort (e.g. T2 before T10)
+        return a.tableNumber.localeCompare(b.tableNumber, undefined, { numeric: true });
+      });
+      setTables(sortedTables);
     } catch (error) {
       console.error(error);
     }
@@ -686,7 +690,7 @@ function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
       const res = await fetch("/api/tables/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
-        body: JSON.stringify({ count })
+        body: JSON.stringify({ count, hostUrl: window.location.origin })
       });
       if (res.ok) {
         fetchTables();
