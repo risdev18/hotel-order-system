@@ -21,15 +21,12 @@ export default async function OrderPage({ params }: PageProps) {
   const restaurant = { id: restSnap.docs[0].id, ...restSnap.docs[0].data() } as any;
 
   // Find the specific table for this restaurant
-  const tableSnap = await db.collection("tables")
-    .where("restaurantId", "==", restaurant.id)
-    .where("tableNumber", "==", tableId)
-    .get();
+  const tableDoc = await db.collection("tables").doc(tableId).get();
 
-  if (tableSnap.empty) {
+  if (!tableDoc.exists || tableDoc.data()?.restaurantId !== restaurant.id) {
     notFound();
   }
-  const table = { id: tableSnap.docs[0].id, ...tableSnap.docs[0].data() } as any;
+  const table = { id: tableDoc.id, ...tableDoc.data() } as any;
 
   // Fetch menu just for this restaurant
   const categoriesSnap = await db.collection("menuCategories").where("restaurantId", "==", restaurant.id).get();
