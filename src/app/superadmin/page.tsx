@@ -56,6 +56,22 @@ export default function SuperAdminDashboard() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this restaurant? This cannot be undone.")) return;
+    try {
+      const res = await fetch(`/api/superadmin/restaurants?id=${id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        setRestaurants(restaurants.filter(r => r.id !== id));
+      } else {
+        alert("Failed to delete restaurant");
+      }
+    } catch (err) {
+      alert("Error deleting restaurant");
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
@@ -122,8 +138,14 @@ export default function SuperAdminDashboard() {
                     <p className="text-sm text-neutral-500 mt-1">Slug: <span className="font-mono bg-neutral-100 px-2 py-0.5 rounded text-neutral-700">{rest.slug}</span></p>
                     <p className="text-sm text-neutral-500 mt-1">Password: <span className="font-mono bg-neutral-100 px-2 py-0.5 rounded text-neutral-700">{rest.password}</span></p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex flex-col items-end gap-2">
                     <p className="text-sm font-bold text-neutral-700">{rest.tableCount} Tables</p>
+                    <button 
+                      onClick={() => handleDelete(rest.id)}
+                      className="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors flex items-center gap-1 text-sm font-bold"
+                    >
+                      <Trash2 size={16} /> Delete
+                    </button>
                   </div>
                 </div>
               ))

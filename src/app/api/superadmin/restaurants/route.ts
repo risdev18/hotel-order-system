@@ -44,3 +44,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "DB Error: " + (error.message || "Unknown") }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ error: "Missing restaurant ID" }, { status: 400 });
+    }
+    
+    await db.collection("restaurants").doc(id).delete();
+    
+    return NextResponse.json({ message: "Restaurant deleted successfully" });
+  } catch (error: any) {
+    console.error(error);
+    return NextResponse.json({ error: "Failed to delete restaurant" }, { status: 500 });
+  }
+}
