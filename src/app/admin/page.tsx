@@ -656,6 +656,26 @@ function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
     }
   };
 
+  const handleAddTable = async () => {
+    const tableNumber = prompt("Enter new table number (e.g. T11):");
+    if (!tableNumber) return;
+    try {
+      const res = await fetch("/api/tables", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
+        body: JSON.stringify({ tableNumber })
+      });
+      if (res.ok) {
+        fetchTables();
+      } else {
+        const error = await res.json();
+        alert(error.error || "Failed to add table");
+      }
+    } catch (error) {
+      alert("Error adding table");
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto print:p-0 print:max-w-none print:w-full">
       <div className="flex justify-between items-end mb-8 print:hidden">
@@ -673,6 +693,12 @@ function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
             Generate Missing QRs
           </button>
           <button 
+            onClick={handleAddTable}
+            className="bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-xl font-medium flex items-center gap-2 hover:bg-neutral-50 transition-colors"
+          >
+            + Add Table
+          </button>
+          <button 
             onClick={() => window.print()}
             className="bg-neutral-900 text-white px-6 py-2 rounded-xl font-medium flex items-center gap-2 hover:bg-neutral-800 transition-colors shadow-md"
           >
@@ -681,6 +707,13 @@ function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
           </button>
         </div>
       </div>
+
+      {tables.length === 0 && (
+        <div className="py-20 flex flex-col items-center justify-center text-neutral-400 bg-white rounded-3xl border border-neutral-200 shadow-sm print:hidden">
+          <p className="text-xl font-medium mb-4">No tables found</p>
+          <button onClick={handleAddTable} className="bg-orange-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-orange-700">Add First Table</button>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 print:grid-cols-3 print:gap-8 print:w-full">
         {tables.map(table => (

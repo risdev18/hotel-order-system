@@ -38,6 +38,19 @@ export async function POST(req: NextRequest) {
       createdAt: new Date().toISOString()
     });
 
+    // Auto-provision tables
+    const batch = db.batch();
+    for (let i = 1; i <= finalTableCount; i++) {
+      const tableRef = db.collection("tables").doc();
+      batch.set(tableRef, {
+        restaurantId: docRef.id,
+        tableNumber: `T${i.toString().padStart(2, '0')}`,
+        status: "free",
+        createdAt: new Date().toISOString()
+      });
+    }
+    await batch.commit();
+
     return NextResponse.json({ message: "Restaurant created successfully", id: docRef.id, slug });
   } catch (error: any) {
     console.error(error);
