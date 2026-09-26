@@ -286,6 +286,19 @@ function MenuManagementTab({ restaurantId }: { restaurantId: string }) {
     fetchMenu();
   }, []);
 
+  const toggleAvailability = async (itemId: string, currentStatus: boolean) => {
+    try {
+      await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
+        body: JSON.stringify({ itemId, isAvailable: !currentStatus })
+      });
+      fetchMenu();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -561,16 +574,22 @@ function MenuManagementTab({ restaurantId }: { restaurantId: string }) {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {cat.items.map((item: any) => (
-                <div key={item.id} className="border border-neutral-100 bg-neutral-50 p-4 rounded-xl flex justify-between items-center group hover:border-orange-200 transition-colors">
+                <div key={item.id} className={cn("border p-4 rounded-xl flex justify-between items-center group transition-colors", item.isAvailable ? "border-neutral-100 bg-neutral-50 hover:border-orange-200" : "border-red-200 bg-red-50 opacity-75")}>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <div className={`w-3 h-3 border rounded-sm flex items-center justify-center shrink-0 ${item.vegFlag ? "border-green-500" : "border-red-500"}`}>
                         <div className={`w-1.5 h-1.5 rounded-md ${item.vegFlag ? "bg-green-500" : "bg-red-500"}`} />
                       </div>
-                      <h4 className="font-bold text-neutral-800">{item.name}</h4>
+                      <h4 className={cn("font-bold", item.isAvailable ? "text-neutral-800" : "text-neutral-500 line-through")}>{item.name}</h4>
                     </div>
                     <p className="text-orange-600 font-medium">₹{item.price}</p>
                   </div>
+                  <button 
+                    onClick={() => toggleAvailability(item.id, item.isAvailable)}
+                    className={cn("px-3 py-1 text-xs font-bold rounded-md transition-colors", item.isAvailable ? "bg-red-100 text-red-700 hover:bg-red-200" : "bg-green-100 text-green-700 hover:bg-green-200")}
+                  >
+                    {item.isAvailable ? "Mark Sold Out" : "Mark Available"}
+                  </button>
                 </div>
               ))}
             </div>

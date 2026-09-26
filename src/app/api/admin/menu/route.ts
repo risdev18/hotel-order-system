@@ -47,3 +47,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const restaurantId = req.headers.get("x-restaurant-id");
+    if (!restaurantId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const data = await req.json();
+    const { itemId, isAvailable } = data;
+
+    if (!itemId || isAvailable === undefined) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Update availability
+    await db.collection("menuItems").doc(itemId).update({
+      isAvailable
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
