@@ -7,10 +7,21 @@ function initDb() {
     let credentialConfig;
     try {
       // Try normal JSON parse first
-      credentialConfig = cert(JSON.parse(serviceAccountStr || '{}'));
+      if (serviceAccountStr) {
+        credentialConfig = cert(JSON.parse(serviceAccountStr));
+      } else {
+        throw new Error("No serviceAccountStr");
+      }
     } catch (e) {
       // Fallback: extract from env
-      const privateKey = (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+      const privateKeyEnv = process.env.FIREBASE_PRIVATE_KEY;
+      
+      if (!privateKeyEnv) {
+        throw new Error("FIREBASE_PRIVATE_KEY environment variable is completely missing or empty! Please add it to your .env file or Vercel dashboard.");
+      }
+
+      // Remove any literal double quotes that might have been parsed, and fix newlines
+      const privateKey = privateKeyEnv.replace(/"/g, '').replace(/\\n/g, '\n');
       
       credentialConfig = cert({
         projectId: process.env.FIREBASE_PROJECT_ID || 'hotel-f469e',
