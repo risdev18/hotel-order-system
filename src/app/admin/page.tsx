@@ -615,8 +615,10 @@ function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
       });
       const data = await res.json();
       const sortedTables = (data.tables || []).sort((a: any, b: any) => {
-        const numA = parseInt(a.tableNumber.replace(/[^0-9]/g, '')) || 0;
-        const numB = parseInt(b.tableNumber.replace(/[^0-9]/g, '')) || 0;
+        const strA = String(a.tableNumber || "");
+        const strB = String(b.tableNumber || "");
+        const numA = parseInt(strA.replace(/[^0-9]/g, '')) || 0;
+        const numB = parseInt(strB.replace(/[^0-9]/g, '')) || 0;
         return numA - numB;
       });
       setTables(sortedTables);
@@ -649,7 +651,7 @@ function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
           fetch("/api/tables/qr", {
             method: "POST",
             headers: { "Content-Type": "application/json", "x-restaurant-id": restaurantId },
-            body: JSON.stringify({ tableId: table.id, hostUrl: window.location.origin })
+            body: JSON.stringify({ tableId: table.id, tableNumber: table.tableNumber, hostUrl: window.location.origin })
           })
         );
       

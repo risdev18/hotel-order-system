@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       const tableRef = db.collection("tables").doc();
       const tableNumberStr = `T${i.toString().padStart(2, '0')}`;
       
-      const orderUrl = `${hostUrl}/order/${slug}/${tableRef.id}`;
+      const orderUrl = `${hostUrl}/order/${slug}/${tableNumberStr}`;
       const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(orderUrl)}`;
 
       batch.set(tableRef, {
