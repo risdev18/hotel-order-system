@@ -615,8 +615,9 @@ function TablesManagementTab({ restaurantId }: { restaurantId: string }) {
       });
       const data = await res.json();
       const sortedTables = (data.tables || []).sort((a: any, b: any) => {
-        // Natural sort (e.g. T2 before T10)
-        return a.tableNumber.localeCompare(b.tableNumber, undefined, { numeric: true });
+        const numA = parseInt(a.tableNumber.replace(/\\D/g, '')) || 0;
+        const numB = parseInt(b.tableNumber.replace(/\\D/g, '')) || 0;
+        return numA - numB;
       });
       setTables(sortedTables);
     } catch (error) {
